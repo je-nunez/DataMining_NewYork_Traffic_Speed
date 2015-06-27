@@ -19,6 +19,17 @@ provides real-time traffic information. E.g.:
 
      http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
 
+As of June 26, 2015, this URL can give these columns with information
+about the speed of traffic:
+
+      Id numeric
+      Speed numeric
+      TravelTime numeric
+      Borough string
+      AddressName string
+
+as well as other columns.
+
 `WEKA` ((c) The University of Waikato, Hamilton, New Zealand) is a collection
 of machine learning algorithms for data mining tasks. For a general
 description of WEKA, its use in Big Data (as in map-reduce jobs to Hadoop),
@@ -50,20 +61,20 @@ dataset, and load it into WEKA.
 The ETL parser in `NewYorkCity_Link_Speed_Data_Mining.scala` is strict, so if
 the format given by
 
-    //real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
 
 changes, it will refuse to continue and fail, instead of feeding the unknown
 format into WEKA. (This decision could be very conservative.)
 
 (WEKA also offers some input converters, see:
 
-   http://weka.sourceforge.net/doc.dev/weka/core/converters/package-tree.html
+     http://weka.sourceforge.net/doc.dev/weka/core/converters/package-tree.html
 
 like those implementing the interface
 
-   weka.core.converters.URLSourcedLoader
-
-   http://weka.sourceforge.net/doc.dev/weka/core/converters/URLSourcedLoader.html
+     weka.core.converters.URLSourcedLoader
+      
+     http://weka.sourceforge.net/doc.dev/weka/core/converters/URLSourcedLoader.html
 
 but the real-time information from
 `http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt` is not clean,

@@ -80,3 +80,11 @@ but the real-time information from
 `http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt` is not clean,
 and some input records need to be transformed or discarded)
 
+One issue with the current, first ETL approach is that it parses
+
+     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+
+in only one pass, not two-passes, so it declares some attributes as "strings"
+or "numeric" in the WEKA ARFF. But the WEKA classifiers prefer attributes
+declared as "nominal", hence a two-pass parser is better.
+

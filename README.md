@@ -25,7 +25,7 @@ about the speed of traffic:
       Id numeric
       Speed numeric
       TravelTime numeric
-      Borough string
+      Borough nominal
       AddressName string
 
 as well as other columns.

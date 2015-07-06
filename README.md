@@ -85,9 +85,10 @@ One issue with the original ETL approach was that it parsed
      http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
 
 in only one pass, not two-passes, so it declared some attributes as "strings"
-or "numeric" in the WEKA ARFF header. But the WEKA classifiers prefer attributes
-declared as "nominal", hence a two-pass parser is better, and is the one that is
-implemented now. (The parser can also be incremental, since WEKA's `ARFFSaver`
-implements the `IncrementalConverter` interface -see its `writeIncremental(...)`
-public method.)
+or "numeric" in the WEKA ARFF header (ARFF is only one text file, with only a
+header part and a data part, not two files '.names' and '.data' as Ross Quinlan's
+C4.5). But the WEKA classifiers prefer attributes declared as "nominal", hence a
+two-pass parser is better, and is the one that is implemented now. (The parser
+can also be incremental, since WEKA's `ARFFSaver` implements the
+`IncrementalConverter` interface -see its `writeIncremental(...)` public method.)
 

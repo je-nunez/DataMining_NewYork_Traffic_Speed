@@ -45,6 +45,25 @@ as well as other repositories in this account:
 This repository is to work with WEKA on the Open Data provided by the City of
 New York.
 
+# Required Library
+
+The New York City Real-Time Traffic Speed URL,
+
+     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+
+divides the speed of traffic in polygons. To analyze these polygons, and their
+operations, this project needs the GeoScript library:
+
+     http://geoscript.org/
+
+like
+
+     http://geoscript.org/examples/geom/relate.html#intersection
+
+You need to install the GeoScript Scala library:
+
+     http://geoscript.org/scala/quickstart.html
+
 # Status of this project
 
 So far, the script `NewYorkCity_Link_Speed_Data_Mining.scala` is able to

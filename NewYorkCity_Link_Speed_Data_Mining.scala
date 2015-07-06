@@ -25,6 +25,10 @@ import org.geoscript.geometry.Geometry
  * New York City, and the classes below allow to find the intersection of
  * polygons, etc, these polygonal operations will allow us to find the
  * bottlenecks or optimum (faster) paths around different points.
+ *
+ * Note: this is not the Polygon of the WEKA UserClassifier, in
+ *      weka/classifiers/trees/UserClassifier.java
+ * but the spatial polygon of the section of speed in NYC.
  */
 
 

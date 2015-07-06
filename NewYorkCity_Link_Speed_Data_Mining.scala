@@ -5,6 +5,31 @@ import _root_.java.net.URL
 import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
 
+/* Polygon */
+
+import org.geoscript.geometry.Geometry
+
+/*
+ * GeoScript Polygon classes, since the New York City Real-Time
+ * Link Speed URL:
+ *
+ *    http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+ *
+ * has a column, "linkPoints", with values like:
+ *
+ *    "40.74047,-74.009251 40.74137,-74.00893 40.7431706,-74.008591 ..."
+ *
+ * which represent the speed of the traffic in that polygon in New York City.
+ *
+ * Since the URL represents the speeds of traffic in different polygons inside
+ * New York City, and the classes below allow to find the intersection of
+ * polygons, etc, these polygonal operations will allow us to find the
+ * bottlenecks or optimum (faster) paths around different points.
+ */
+
+
+/* WEKA Machine Learning */
+
 import weka.core.Instances
 // import weka.core.converters.ArffSaver
 import weka.core.converters.SerializedInstancesSaver

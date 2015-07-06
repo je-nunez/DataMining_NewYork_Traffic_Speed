@@ -6,7 +6,8 @@ import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
 
 import weka.core.Instances
-import weka.core.converters.ArffSaver
+// import weka.core.converters.ArffSaver
+import weka.core.converters.SerializedInstancesSaver
 import weka.core.converters.CSVLoader
 
 
@@ -118,10 +119,35 @@ def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String, dest_file: String) {
       }
 }
 
+
+/*
+ * Not in use: see convert_clean_CSV_to_WEKA_SerializedInstancesSaver()
+ *
 def convert_clean_CSV_to_WEKA_ARFF(src_csv: String, dest_arff: String) {
 
       // Modified from https://weka.wikispaces.com/Converting+CSV+to+ARFF
       // to add the format of our dates, and nominal attributes
+
+      var cvs_in: CSVLoader = new CSVLoader();
+      cvs_in.setOptions(Array(
+                              "-D", "5",
+                              "-format", "M/d/yyyy HH:mm:ss",
+                              "-S", "7-9"
+                             )
+                       );
+      cvs_in.setSource(new File(src_csv));
+      var instances_in: Instances = cvs_in.getDataSet();
+
+      var arff_out: ArffSaver = new ArffSaver();
+      arff_out.setInstances(instances_in);
+      arff_out.setFile(new File(dest_arff));
+      arff_out.writeBatch();
+}
+ *
+ */
+
+def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
+                                                       dest_bsi: String) {
 
       var cvs_in: CSVLoader = new CSVLoader();
       /* Some options for the New York City's Traffic Speed CVS, ie., which
@@ -138,11 +164,12 @@ def convert_clean_CSV_to_WEKA_ARFF(src_csv: String, dest_arff: String) {
       cvs_in.setSource(new File(src_csv));
       var instances_in: Instances = cvs_in.getDataSet();
 
-      var arff_out: ArffSaver = new ArffSaver();
-      arff_out.setInstances(instances_in);
-      arff_out.setFile(new File(dest_arff));
-      arff_out.writeBatch();
+      var sinst_out: SerializedInstancesSaver = new SerializedInstancesSaver();
+      sinst_out.setInstances(instances_in);
+      sinst_out.setFile(new File(dest_bsi));
+      sinst_out.writeBatch();
 }
+
 
 
 // The temporary filename is "New_York_City_Link_Speed.csv" because WEKA will
@@ -154,11 +181,12 @@ val temp_csv_fname = "New_York_City_Link_Speed.csv"
 
 download_NYC_TrafficSpeed_to_clean_CSV(NYC_Traffic_Speed_URL, temp_csv_fname)
 
-// Second pass of the parser: convert CSV to ARFF, finding nominal attributes,
-// etc.
+// Second pass of the parser: convert CSV to BSI -SerializedInstances-, finding
+// nominal attributes, etc.
 
-val dest_csv_fname = "New_York_City_Link_Speed.arff"
-convert_clean_CSV_to_WEKA_ARFF(temp_csv_fname, dest_csv_fname)
+val dest_bsi_fname = "New_York_City_Link_Speed.bsi"
+convert_clean_CSV_to_WEKA_SerializedInstancesSaver(temp_csv_fname,
+                                                   dest_bsi_fname)
 
 new File(temp_csv_fname).delete()
 

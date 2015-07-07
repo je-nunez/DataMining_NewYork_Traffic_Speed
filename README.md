@@ -69,8 +69,8 @@ and its underlying library, the `Java Topology Suite` (JTS):
     http://www.vividsolutions.com/jts/JTSHome.htm
 
 The Java CLASSPATH must point to the JTS `jts-<latest-version>.jar`
-file, the GeoScript Scala `geoscript/..../classes/org/` base
-directory, and to the WEKA `weka.jar` file.
+file, the GeoScript Scala `geoscript/..../classes/org/geoscript/`
+base directory, and to the WEKA `weka.jar` file.
 
 # Status of this project
 

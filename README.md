@@ -45,7 +45,7 @@ as well as other repositories in this account:
 This repository is to work with WEKA on the Open Data provided by the City of
 New York.
 
-# Required Library
+# Required Libraries
 
 The New York City Real-Time Traffic Speed URL,
 
@@ -60,9 +60,17 @@ like
 
      http://geoscript.org/examples/geom/relate.html#intersection
 
-You need to install the GeoScript Scala library:
+You need to install the `GeoScript Scala` library:
 
      http://geoscript.org/scala/quickstart.html
+
+and its underlying library, the `Java Topology Suite` (JTS):
+
+    http://www.vividsolutions.com/jts/JTSHome.htm
+
+The Java CLASSPATH must point to the JTS `jts-<latest-version>.jar`
+file, the GeoScript Scala `geoscript/..../classes/org/` base
+directory, and to the WEKA `weka.jar` file.
 
 # Status of this project
 

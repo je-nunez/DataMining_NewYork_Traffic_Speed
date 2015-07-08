@@ -4,10 +4,12 @@ import sys.process._
 import _root_.java.net.URL
 import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
+import scala.collection.JavaConversions._
 
 /* Polygon */
 
-import org.geoscript.geometry.Geometry
+// import org.geoscript.geometry.io._
+// import org.geoscript.geometry._
 
 /*
  * GeoScript Polygon classes, since the New York City Real-Time
@@ -38,6 +40,7 @@ import weka.core.Instances
 // import weka.core.converters.ArffSaver
 import weka.core.converters.SerializedInstancesSaver
 import weka.core.converters.CSVLoader
+import weka.core.converters.SerializedInstancesLoader
 
 
 
@@ -199,7 +202,40 @@ def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
       sinst_out.writeBatch();
 }
 
+def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
+    // load the New York City Real-Time traffic speed loaded from
+    //     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+    // into GeoScript/Java Topology Suite polygonal sections of New York City
 
+    var sinst_in: SerializedInstancesLoader = new SerializedInstancesLoader();
+    sinst_in.setSource(new File(weka_bsi_file));
+ 
+    for (instance <- Iterator.continually(sinst_in.getNextInstance(null)).
+                                 takeWhile(_ != null)) {
+
+         // Split the fields of this WEKA instance:
+         //       The 7th column is the polygonal section inside New York City
+         val polygon_str = instance.stringValue(6)
+         //       The 2nd column is the traffic speed in that polygonal section
+         val speed = instance.value(1)
+         //       The 13th column is a well-known address inside New York
+         val well_known_address = instance.stringValue(12)
+
+         println("DEBUG: speed is: " + speed + 
+                 "\n           inside polygonal section " + polygon_str +
+                 "\n           reference point: '" + well_known_address + "'")
+
+         // call GeoScript
+         // builder.LineString(Array((0.0,0.0), (1.0,1.0), (2.0,4.0), (0.0,0.0)))
+         // res1: org.geoscript.geometry.LineString = LINESTRING (...)
+     }
+}
+
+
+/*
+ *   MAIN PROGRAM
+ *
+ */
 
 // The temporary filename is "New_York_City_Link_Speed.csv" because WEKA will
 // use the filename (without extension) as the @relation name in the ARFF file
@@ -218,4 +254,6 @@ convert_clean_CSV_to_WEKA_SerializedInstancesSaver(temp_csv_fname,
                                                    dest_bsi_fname)
 
 new File(temp_csv_fname).delete()
+
+load_NewYork_traffic_speed_per_polygon_in_the_city(dest_bsi_fname)
 

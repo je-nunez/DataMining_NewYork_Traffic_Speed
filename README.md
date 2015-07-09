@@ -64,13 +64,34 @@ You need to install the `GeoScript Scala` library:
 
      http://geoscript.org/scala/quickstart.html
 
-and its underlying library, the `Java Topology Suite` (JTS):
+and its underlying libraries, the `Java Topology Suite` (JTS):
 
     http://www.vividsolutions.com/jts/JTSHome.htm
 
-The Java CLASSPATH must point to the JTS `jts-<latest-version>.jar`
-file, the GeoScript Scala `geoscript/..../classes/org/geoscript/`
-base directory, and to the WEKA `weka.jar` file.
+and the `Open Source Java GIS Toolkit` from the `Open Source
+Geospatial Foundation`:
+
+    http://sourceforge.net/projects/geotools/files/
+
+# Required Environment Variables
+
+These are the required environment variables:
+
+     # build the JVM CLASSPATH we need
+      
+     # substitute "<path-to>" below by the real path where each is located
+     V=""     # variable V will have the CLASSPATH we need
+     for p in <path-to>/weka.jar  \
+              <path-to>/geotools-12.4/jts-1.13.jar \
+              <path-to>/geotools-12.4/gt-opengis-12.4.jar \
+              <path-to>/geotools-12.4/gt-api-12.4.jar  \
+              <path-to>/geotools-12.4/gt-render-12.4.jar \
+              <path-to>/geoscript.scala/geoscript/target/scala-2.10/classes
+     do
+         V="${V}:$p"
+     done
+      
+     export CLASSPATH="$CLASSPATH:${V}"
 
 # Status of this project
 

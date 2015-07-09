@@ -1,6 +1,7 @@
 #!/usr/bin/env scala
 
 import sys.process._
+import scala.util.control.Exception._
 import _root_.java.net.URL
 import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
@@ -8,8 +9,9 @@ import scala.collection.JavaConversions._
 
 /* Polygon */
 
-// import org.geoscript.geometry.io._
-// import org.geoscript.geometry._
+import org.geoscript.geometry.io._
+import org.geoscript.geometry._
+import org.geoscript.viewer._
 
 /*
  * GeoScript Polygon classes, since the New York City Real-Time
@@ -202,6 +204,7 @@ def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
       sinst_out.writeBatch();
 }
 
+
 def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
     // load the New York City Real-Time traffic speed loaded from
     //     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
@@ -209,7 +212,7 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
 
     var sinst_in: SerializedInstancesLoader = new SerializedInstancesLoader();
     sinst_in.setSource(new File(weka_bsi_file));
- 
+
     for (instance <- Iterator.continually(sinst_in.getNextInstance(null)).
                                  takeWhile(_ != null)) {
 
@@ -221,13 +224,31 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
          //       The 13th column is a well-known address inside New York
          val well_known_address = instance.stringValue(12)
 
-         println("DEBUG: speed is: " + speed + 
+         /*
+         println("DEBUG: speed is: " + speed +
                  "\n           inside polygonal section " + polygon_str +
                  "\n           reference point: '" + well_known_address + "'")
+         */
 
-         // call GeoScript
-         // builder.LineString(Array((0.0,0.0), (1.0,1.0), (2.0,4.0), (0.0,0.0)))
-         // res1: org.geoscript.geometry.LineString = LINESTRING (...)
+         val coords = catching(classOf[java.lang.RuntimeException]) opt polygon_str.split("\\s+").map {
+                             case point_str: String => {
+                                   val coord = point_str.split(",")
+                                   (coord(0).toDouble, coord(1).toDouble)
+                             }
+                      }
+
+         if (coords != null && coords.isDefined && coords.get.length > 0)  {
+                      // println("DEBUG: polygon is: " + coords.get.mkString(" "))
+                      // call GeoScript
+                      // builder.LineString(Array((0.0,0.0), (1.0,1.0), (2.0,4.0), (0.0,0.0)))
+                      val geoscript_line_string = builder.LineString(coords.get)
+                      println( geoscript_line_string )
+                      // res1: org.geoscript.geometry.LineString = LINESTRING (...)
+         } else
+            System.err.println("WARNING: ignoring polygon around " +
+                               "reference address: '" + well_known_address +
+                               "'\n   not-parseable poly-points: " + polygon_str)
+
      }
 }
 

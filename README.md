@@ -82,7 +82,20 @@ or, in general, a shapefile that *happens to be more precise for the actual
 polygons offered by the NYC Department of Transportation at its first URL above*
 (ie., the shapefiles in this link in the `BYTES of the BIG APPLE` web-site
 might be approximations for the NYC Dept. of Transportation's polygonal
-sections of the city).
+sections of the city). Ie., other possible shapefiles are the very good
+explanation here:
+
+    http://docs.geoserver.org/latest/en/user/gettingstarted/shapefile-quickstart/index.html
+
+or:
+
+    https://data.cityofnewyork.us/Housing-Development/Building-Footprints/tb92-6tj8
+
+or the underlying shapefile in, for example,
+
+    http://maps.nyc.gov/doitt/nycitymap/?z=7&p=990013,189733&f=SUBWAY
+
+or other polygonal section the URL of the NYC Dept. of Transportation contains.
 
 # Required Environment Variables
 

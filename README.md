@@ -73,6 +73,17 @@ Geospatial Foundation`:
 
     http://sourceforge.net/projects/geotools/files/
 
+The objective is to use `GIS` with the New York City `shapefiles` from
+the `BYTES of the BIG APPLE` web-site:
+
+   http://www.nyc.gov/html/dcp/html/bytes/districts_download_metadata.shtml#cbt
+
+or, in general, a shapefile that *happens to be more precise for the actual
+polygons offered by the NYC Department of Transportation at its first URL above*
+(ie., the shapefiles in this link in the `BYTES of the BIG APPLE` web-site
+might be approximations for the NYC Dept. of Transportation's polygonal
+sections of the city).
+
 # Required Environment Variables
 
 These are the required environment variables:

@@ -6,6 +6,7 @@ import _root_.java.net.URL
 import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
 import scala.collection.JavaConversions._
+import _root_.java.net.URLEncoder
 
 /* Polygon */
 
@@ -45,9 +46,32 @@ import weka.core.converters.CSVLoader
 import weka.core.converters.SerializedInstancesLoader
 
 
-
 val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt"
 
+
+/*
+ * function: error_msg
+ *
+ * Handle logging error messages
+ */
+
+val print_errors = 0
+
+def error_msg(err_msg: String) {
+    // Better to do with an error-level, like in Unix
+    // (ie., Debug, Info, Notice, Warning, etc)
+
+    if(print_errors != 0) System.err.println(err_msg)
+}
+
+
+/*
+ * function: write_clean_CSV_header
+ *
+ * This is ETL. Check if the CVS header from the New York City Real-Time Link
+ * Speed URL is the same as we expected, because if the CVS header has changed,
+ * then the parser needs to change
+ */
 
 def write_clean_CSV_header(header_line: String,
                                 clean_csv_file: java.io.FileWriter) {
@@ -90,6 +114,15 @@ def write_clean_CSV_header(header_line: String,
       clean_csv_file.write(header_line + "\n")
 }
 
+
+/*
+ * function: write_clean_CSV_data_line
+ *
+ * This is ETL. Check if the CVS data-line from the New York City Real-Time
+ * Link Speed URL has all the fields that we expect and in the format we
+ * expect them: otherwise, ignore the bad input record
+ */
+
 def write_clean_CSV_data_line(data_line: String,
                               clean_csv_file: java.io.FileWriter) {
 
@@ -104,7 +137,7 @@ def write_clean_CSV_data_line(data_line: String,
       // We expect that the parsing above returned 13 fields in this line
 
       if(line_values.length != 13) {
-          System.err.println("WARNING: Ignoring line: " + data_line)
+          error_msg("WARNING: Ignoring line: " + data_line)
           return
       }
 
@@ -119,7 +152,7 @@ def write_clean_CSV_data_line(data_line: String,
           val d = nyc_date_time_fmt.parse(line_values(4))
       } catch {
           case e: java.text.ParseException => {
-               System.err.println("WARNING: Ignoring line: " + data_line)
+               error_msg("WARNING: Ignoring line: " + data_line)
                return
           }
       }
@@ -127,6 +160,14 @@ def write_clean_CSV_data_line(data_line: String,
       // Write this data line to the CSV file
       clean_csv_file.write(data_line + "\n")
 }
+
+
+/*
+ * function: download_NYC_TrafficSpeed_to_clean_CSV
+ *
+ * This is ETL. Download the CVS from the New York City Real-Time URL and
+ * validates its header and filters the records that are valid.
+ */
 
 def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String, dest_file: String) {
       try {
@@ -148,7 +189,7 @@ def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String, dest_file: String) {
             out.close
       } catch {
             case e: java.io.IOException => {
-                         System.err.println("ERROR: I/O error occurred")
+                         error_msg("ERROR: I/O error occurred")
                        }
       }
 }
@@ -180,6 +221,15 @@ def convert_clean_CSV_to_WEKA_ARFF(src_csv: String, dest_arff: String) {
  *
  */
 
+
+/*
+ * function: convert_clean_CSV_to_WEKA_SerializedInstancesSaver
+ *
+ * Converts the CSV file to a binary file in WEKA SerializedInstancesSaver
+ * format (".bsi" extension) -that currently is the same as the Java
+ * serialized object format.
+ */
+
 def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
                                                        dest_bsi: String) {
 
@@ -205,6 +255,52 @@ def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
 }
 
 
+/*
+ * function: print_map
+ *
+ * Prints a map.
+ * Currently it uses the Google Maps, but its purpose is to use the New York
+ * City Open Data shapefiles, from GIS. (Like, e.g.,
+ *
+ *  https://data.cityofnewyork.us/Housing-Development/Building-Footprints/tb92-6tj8
+ *
+ * although this one has too much information, since it even has the building
+ * foot-prints.
+ */
+
+def print_map(encoded_polyline: String, centroid: Point) {
+
+      // URL-encode the encoded polygonal zone in "max_speed_polyline_enc"
+ 
+      val url_pol: String = URLEncoder.encode(encoded_polyline, "UTF-8").
+                                       replace("+", "%20")
+ 
+      // Print the URL in Google Maps for it
+      val centr_longitude = centroid.x
+      val centr_latitude = centroid.y
+      val gmap_url = "https://maps.googleapis.com/maps/api/staticmap?" +
+                     f"center=$centr_longitude%6.6f,$centr_latitude%6.6f" +
+                     "&zoom=14&size=800x800&maptype=roadmap" + 
+                     "&path=fillcolor:0xFF000099%7Ccolor:0xFFFFFF00%7Cenc:" +
+                     url_pol
+      println(gmap_url)
+}
+
+
+/*
+ * function: load_NewYork_traffic_speed_per_polygon_in_the_city
+ *
+ * Loads a WEKA SerializedInstances file with the real-time traffic in NYC
+ * and filters those records which have valid polygonal sections for
+ * GeoScript.
+ * Note: the NYC traffic has the polygons as poly-lines and also in encoded
+ * format:
+ * https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+ *
+ * The first format of the polygon is used to validate it, the second to print
+ * it in Google Maps.
+ */
+
 def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
     // load the New York City Real-Time traffic speed loaded from
     //     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
@@ -213,12 +309,28 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
     var sinst_in: SerializedInstancesLoader = new SerializedInstancesLoader();
     sinst_in.setSource(new File(weka_bsi_file));
 
+    // Record the location which has the slowest speed
+    var min_speed: Double = 9999999.0;
+    var min_speed_polyline_centroid: Point = null;
+    var min_speed_polyline_enc: String = "";
+    var min_speed_relative_addr: String = "";
+   
+    // Record the location which has the fastest speed
+    var max_speed: Double = -1.0;
+    var max_speed_polyline_centroid: Point = null;
+    var max_speed_polyline_enc: String = "";
+    var max_speed_relative_addr: String = "";
+   
     for (instance <- Iterator.continually(sinst_in.getNextInstance(null)).
                                  takeWhile(_ != null)) {
 
          // Split the fields of this WEKA instance:
          //       The 7th column is the polygonal section inside New York City
          val polygon_str = instance.stringValue(6)
+         //       The 8th column in the WEKA instance is the encoded-polygonal
+         //        by the Google polyline algorithm format, below:
+         // https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+         val polygon_enc = instance.stringValue(7)
          //       The 2nd column is the traffic speed in that polygonal section
          val speed = instance.value(1)
          //       The 13th column is a well-known address inside New York
@@ -238,17 +350,44 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
                       }
 
          if (coords != null && coords.isDefined && coords.get.length > 0)  {
+                      // It is a valid polygon
                       // println("DEBUG: polygon is: " + coords.get.mkString(" "))
                       // call GeoScript
-                      // builder.LineString(Array((0.0,0.0), (1.0,1.0), (2.0,4.0), (0.0,0.0)))
                       val geoscript_line_string = builder.LineString(coords.get)
-                      println( geoscript_line_string )
-                      // res1: org.geoscript.geometry.LineString = LINESTRING (...)
+                      // println( geoscript_line_string )
+                      // Find the centroid point of this polygon
+                      val centroid = geoscript_line_string.centroid
+                      // println("DEBUG: Centroid is " + centroid)
+                      // See if this is the location with the less speed so far
+                      if(speed < min_speed) {
+                            min_speed = speed
+                            min_speed_polyline_enc = polygon_enc
+                            min_speed_polyline_centroid = centroid
+                            min_speed_relative_addr = well_known_address
+                      }
+                      if(speed > max_speed) {
+                            max_speed = speed
+                            max_speed_polyline_enc = polygon_enc
+                            max_speed_polyline_centroid = centroid
+                            max_speed_relative_addr = well_known_address
+                      }
          } else
-            System.err.println("WARNING: ignoring polygon around " +
-                               "reference address: '" + well_known_address +
-                               "'\n   not-parseable poly-points: " + polygon_str)
+            error_msg("WARNING: ignoring polygon around reference address: '" +
+                      well_known_address +
+                      "'\n   not-parseable poly-points: " + polygon_str)
 
+     }
+     // Print those polygonal subsections of New York City that happen to have
+     // now the slowest and the fastest speeds
+     if ( min_speed_polyline_enc != "" ) {
+           println("Map of zone with the slowest speed at this moment: " + min_speed +
+                   " (" + min_speed_relative_addr + ")")
+           print_map(min_speed_polyline_enc, min_speed_polyline_centroid)
+     }
+     if ( max_speed_polyline_enc != "" ) {
+           println("Map of zone with the fastest speed at this moment: " + max_speed +
+                   " (" + max_speed_relative_addr + ")")
+           print_map(max_speed_polyline_enc, max_speed_polyline_centroid)
      }
 }
 

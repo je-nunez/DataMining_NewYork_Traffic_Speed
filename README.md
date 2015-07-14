@@ -76,7 +76,7 @@ Geospatial Foundation`:
 The objective is to use `GIS` with the New York City `shapefiles` from
 the `BYTES of the BIG APPLE` web-site:
 
-   http://www.nyc.gov/html/dcp/html/bytes/districts_download_metadata.shtml#cbt
+    http://www.nyc.gov/html/dcp/html/bytes/districts_download_metadata.shtml#cbt
 
 or, in general, a shapefile that *happens to be more precise for the actual
 polygons offered by the NYC Department of Transportation at its first URL above*
@@ -96,6 +96,7 @@ or the underlying shapefile in, for example,
     http://maps.nyc.gov/doitt/nycitymap/?z=7&p=990013,189733&f=SUBWAY
 
 or other polygonal section the URL of the NYC Dept. of Transportation contains.
+So far, for simplicity, we use a URL to Google Maps.
 
 # Required Environment Variables
 

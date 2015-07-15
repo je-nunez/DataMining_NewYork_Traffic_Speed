@@ -49,7 +49,30 @@ import weka.core.converters.CSVLoader
 import weka.core.converters.SerializedInstancesLoader
 
 
+// URL for the New York City Real-Time Link (Traffic) Speed (CSV format)
+
 val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt"
+
+
+/* This is the lastest Traffic Volume Counts per each segment of each street
+ * and per-hour of the day in New York City. This URL doesn't have real-time
+ * data, the latest sample of volume traffic was taken in 2013-2012.
+ *
+ * The master URL is:
+ *
+ * https://data.cityofnewyork.us/NYC-BigApps/Traffic-Volume-Counts-2012-2013-/p424-amsu
+ *
+ * where several formats are exported, like XML and JSON -which has a good
+ * description of the fields in this dataset:
+ *
+ * https://data.cityofnewyork.us/api/views/p424-amsu/rows.json?accessType=DOWNLOAD
+ *
+ * but for current versions of WEKA, the CSV format is easier to read.
+ */
+
+val NYC_Traffic_Volume_Counts = 
+       "https://data.cityofnewyork.us/api/views/p424-amsu/rows.csv?accessType=DOWNLOAD"
+
 
 /* Let's say that this is our objective speed, so the New York City can be
  * crossed from extreme to extreme in 15 minutes, at this optimum
@@ -540,6 +563,9 @@ def main() {
 
      load_NewYork_traffic_speed_per_polygon_in_the_city(dest_bsi_fname)
 
+     // Process the Traffic Volume Counts per segment and per hour to
+     // unite it with the Real-Time Traffic Speed
+     // URL: NYC_Traffic_Volume_Counts
 }
 
 

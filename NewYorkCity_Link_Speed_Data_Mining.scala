@@ -1,4 +1,4 @@
-#!/usr/bin/env scala
+#!/usr/bin/env scala -language:postfixOps
 
 import sys.process._
 import scala.util.control.Exception._
@@ -7,6 +7,9 @@ import _root_.java.io.File
 import _root_.java.text.SimpleDateFormat
 import scala.collection.JavaConversions._
 import _root_.java.net.URLEncoder
+import scala.collection.mutable.ListBuffer
+import scala.math
+
 
 /* Polygon */
 
@@ -48,6 +51,17 @@ import weka.core.converters.SerializedInstancesLoader
 
 val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt"
 
+/* Let's say that this is our objective speed, so the New York City can be
+ * crossed from extreme to extreme in 15 minutes, at this optimum
+ * sustained speed. (Higher speeds than this are better, of course)
+ *
+ * This can be instead a variable determined dinamically (below the maximum of
+ * the real-time speeds of traffic is indeed calculated, but this dinamyc
+ * maximum can be either to slow to this target optimum, or an outlier value
+ * that is too high from the target optimum).
+ */
+
+val target_optimum_NYC_speed: Double = 80.0
 
 /*
  * function: error_msg
@@ -256,7 +270,29 @@ def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
 
 
 /*
- * function: print_map
+ * function: download_url_to_file
+ *
+ * Downloads an URL to a local file (the contents of the URL are not
+ * interpreted, ie., they are taken as-is, as raw binary
+ */
+
+
+def download_url_to_file(src_url: String, dest_file: File) = {
+      // From:
+      // http://alvinalexander.com/scala/scala-how-to-download-url-contents-to-string-file
+      //
+      new URL(src_url) #> dest_file !!
+}
+
+
+// This is a simplification of the WEKA instances
+
+case class Speed_in_PolygonalSection(speed: Double, polygon_encoded: String,
+                                     centroid: Point, well_known_addr: String);
+
+
+/*
+ * function: print_polygonal_zone_in_NYC
  *
  * Prints a map.
  * Currently it uses the Google Maps, but its purpose is to use the New York
@@ -268,22 +304,88 @@ def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
  * foot-prints.
  */
 
-def print_map(encoded_polyline: String, centroid: Point) {
+def print_polygonal_zone_in_NYC(polyg_zone: Speed_in_PolygonalSection,
+                                color: String, dest_png: String) {
 
-      // URL-encode the encoded polygonal zone in "max_speed_polyline_enc"
- 
-      val url_pol: String = URLEncoder.encode(encoded_polyline, "UTF-8").
-                                       replace("+", "%20")
- 
+      // URL-encode the encoded polygonal zone in var "encoded_polyline"
+
+      val enc_polyl = polyg_zone.polygon_encoded
+      val url_polygon: String = URLEncoder.encode(enc_polyl, "UTF-8").
+                                           replace("+", "%20")
+
       // Print the URL in Google Maps for it
-      val centr_longitude = centroid.x
-      val centr_latitude = centroid.y
+      val centr_longitude = polyg_zone.centroid.x
+      val centr_latitude = polyg_zone.centroid.y
       val gmap_url = "https://maps.googleapis.com/maps/api/staticmap?" +
                      f"center=$centr_longitude%6.6f,$centr_latitude%6.6f" +
-                     "&zoom=14&size=800x800&maptype=roadmap" + 
-                     "&path=fillcolor:0xFF000099%7Ccolor:0xFFFFFF00%7Cenc:" +
-                     url_pol
-      println(gmap_url)
+                     "&zoom=14&size=800x800&maptype=roadmap&scale=2" +
+                     f"&path=fillcolor:0xFF$color" +
+                     "%7Ccolor:0xFFFFFF00%7Cenc:" +
+                     url_polygon
+      // println(gmap_url)
+
+      val gmap_png = new File(dest_png)
+      download_url_to_file(gmap_url, gmap_png)
+}
+
+
+/*
+ * function: print_speed_vibrancy_map
+ *
+ * Prints a map with all the polygonal sub-sections of New York City
+ * in different colors according to the current real-time speed in
+ * its polygonal sub-sections
+ *
+ * It receives the list of polygons (: List[Speed_in_PolygonalSection])
+ * and also the min_speed among that list, because that polygonal zone(s)
+ * with currently the slowest speed in traffic must be filled in red, and
+ * not that zone with traffic speed 0.0, which is pbby won't appear.
+ *
+ * Similar as function above, this should use GIS from Open Data as not
+ * to require API registration keys as Google Maps.
+ */
+
+def print_speed_vibrancy_map(min_speed: Double,
+                               polygons: List[Speed_in_PolygonalSection],
+                               dest_png: String) {
+
+      var gmap_paths = new StringBuilder(32*1024)
+
+      /* We order the polygonal zones by speed and take the slowest 12 zones
+       * because Google Maps would not return more than 12 polylines, ie.,
+       * with 14 polylines it may succeed or it may fail
+       */
+      for (polygon_zone <- polygons.sortBy(_.speed).take(12)) {
+           val polyg: String = URLEncoder.encode(polygon_zone.polygon_encoded,
+                                                 "UTF-8").
+                                          replace("+", "%20")
+           // Find which color according to the traffic speed to print this
+           // zone in New York City: green is the best, red is slowest
+           var color : Long = 0x00FF00
+           if (polygon_zone.speed >= target_optimum_NYC_speed)
+                 color = 0x00FF00
+           else {
+                 val delta_speed = ( polygon_zone.speed - min_speed ) /
+                                      ( target_optimum_NYC_speed - min_speed )
+
+                 val delta_color: Int = 0x00FF00 - 0x0000FF
+                 color = 0x0000FF + scala.math.round(delta_color * delta_speed)
+           }
+
+           val color_str = f"$color%06X"
+           gmap_paths.append("&path=fillcolor:0x" + color_str +
+                             "%7Ccolor:0xFFFFFF00%7C" + "enc:" + polyg)
+      }
+
+                     // "center=42.1497,-74.9384&zoom=10&size=800x800"
+
+      val gmap_url = "https://maps.googleapis.com/maps/api/staticmap?" +
+                     // "center=40.7836,-73.9625&zoom=11&size=800x800" +
+                     "size=800x800&scale=2&maptype=roadmap" +
+                     gmap_paths.toString
+
+      val gmap_png = new File(dest_png)
+      download_url_to_file(gmap_url, gmap_png)
 }
 
 
@@ -309,18 +411,14 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
     var sinst_in: SerializedInstancesLoader = new SerializedInstancesLoader();
     sinst_in.setSource(new File(weka_bsi_file));
 
-    // Record the location which has the slowest speed
-    var min_speed: Double = 9999999.0;
-    var min_speed_polyline_centroid: Point = null;
-    var min_speed_polyline_enc: String = "";
-    var min_speed_relative_addr: String = "";
-   
-    // Record the location which has the fastest speed
-    var max_speed: Double = -1.0;
-    var max_speed_polyline_centroid: Point = null;
-    var max_speed_polyline_enc: String = "";
-    var max_speed_relative_addr: String = "";
-   
+    // Get list of valid polygons (it is expected that there are invalid ones)
+    var current_valid_polygons = new ListBuffer[Speed_in_PolygonalSection]()
+
+    // Record the two locations which have the slowest and fastest speeds
+    var min_speed_zone = new Speed_in_PolygonalSection(999999.0, "", null, "")
+
+    var max_speed_zone = new Speed_in_PolygonalSection(-1.0, "", null, "")
+
     for (instance <- Iterator.continually(sinst_in.getNextInstance(null)).
                                  takeWhile(_ != null)) {
 
@@ -351,25 +449,30 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
 
          if (coords != null && coords.isDefined && coords.get.length > 0)  {
                       // It is a valid polygon
-                      // println("DEBUG: polygon is: " + coords.get.mkString(" "))
                       // call GeoScript
-                      val geoscript_line_string = builder.LineString(coords.get)
-                      // println( geoscript_line_string )
+                      val geoscript_line_str= builder.LineString(coords.get)
+                      // println( geoscript_line_str )
                       // Find the centroid point of this polygon
-                      val centroid = geoscript_line_string.centroid
+                      val centroid = geoscript_line_str.centroid
                       // println("DEBUG: Centroid is " + centroid)
+                      current_valid_polygons += new Speed_in_PolygonalSection(
+                                                           speed, polygon_enc,
+                                                           centroid,
+                                                           well_known_address)
+
                       // See if this is the location with the less speed so far
-                      if(speed < min_speed) {
-                            min_speed = speed
-                            min_speed_polyline_enc = polygon_enc
-                            min_speed_polyline_centroid = centroid
-                            min_speed_relative_addr = well_known_address
+                      if(speed < min_speed_zone.speed) {
+                            min_speed_zone = new Speed_in_PolygonalSection(
+                                                           speed, polygon_enc,
+                                                           centroid,
+                                                           well_known_address)
                       }
-                      if(speed > max_speed) {
-                            max_speed = speed
-                            max_speed_polyline_enc = polygon_enc
-                            max_speed_polyline_centroid = centroid
-                            max_speed_relative_addr = well_known_address
+                      if(speed > max_speed_zone.speed) {
+                            max_speed_zone = new Speed_in_PolygonalSection(
+                                                           speed,
+                                                           polygon_enc,
+                                                           centroid,
+                                                           well_known_address)
                       }
          } else
             error_msg("WARNING: ignoring polygon around reference address: '" +
@@ -379,15 +482,30 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
      }
      // Print those polygonal subsections of New York City that happen to have
      // now the slowest and the fastest speeds
-     if ( min_speed_polyline_enc != "" ) {
-           println("Map of zone with the slowest speed at this moment: " + min_speed +
-                   " (" + min_speed_relative_addr + ")")
-           print_map(min_speed_polyline_enc, min_speed_polyline_centroid)
+     if ( min_speed_zone.polygon_encoded != "" ) {
+           print_polygonal_zone_in_NYC(min_speed_zone,
+                                       "00FFFF",
+                                       "visualization_slowest_speed.png")
+           println("Map of zone with the slowest speed at this moment: " +
+                   min_speed_zone.speed +
+                   " (" + min_speed_zone.well_known_addr + ")\n" +
+                   "Downloaded to " + "visualization_slowest_speed.png")
      }
-     if ( max_speed_polyline_enc != "" ) {
-           println("Map of zone with the fastest speed at this moment: " + max_speed +
-                   " (" + max_speed_relative_addr + ")")
-           print_map(max_speed_polyline_enc, max_speed_polyline_centroid)
+     if ( max_speed_zone.polygon_encoded != "" ) {
+           print_polygonal_zone_in_NYC(max_speed_zone,
+                                       "FF00FF",
+                                       "visualization_fastest_speed.png")
+           println("Map of zone with the fastest speed at this moment: " +
+                   max_speed_zone.speed +
+                   " (" + max_speed_zone.well_known_addr + ")\n" +
+                   "Downloaded to " + "visualization_fastest_speed.png")
+     }
+     if ( min_speed_zone.polygon_encoded != "" ) {
+           print_speed_vibrancy_map(min_speed_zone.speed,
+                                    current_valid_polygons.toList,
+                                    "visualization_vibrancy_speed.png")
+           println("Map of vibrancy at this moment downloaded to: " +
+                   "visualization_vibrancy_speed.png")
      }
 }
 

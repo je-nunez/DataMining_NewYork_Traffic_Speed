@@ -515,23 +515,37 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String) {
  *
  */
 
-// The temporary filename is "New_York_City_Link_Speed.csv" because WEKA will
-// use the filename (without extension) as the @relation name in the ARFF file
+def main() {
 
-val temp_csv_fname = "New_York_City_Link_Speed.csv"
+     // The temporary filename is "New_York_City_Link_Speed.csv" because WEKA
+     // will use the filename (without extension) as the @relation name in
+     // the ARFF file
 
-// First pass of the parser: download URL and clean the records to a CSV file
+     val temp_csv_fname = "New_York_City_Link_Speed.csv"
 
-download_NYC_TrafficSpeed_to_clean_CSV(NYC_Traffic_Speed_URL, temp_csv_fname)
+     // First pass of the parser: download URL and clean the records to a
+     // CSV file
 
-// Second pass of the parser: convert CSV to BSI -SerializedInstances-, finding
-// nominal attributes, etc.
+     download_NYC_TrafficSpeed_to_clean_CSV(NYC_Traffic_Speed_URL,
+                                            temp_csv_fname)
 
-val dest_bsi_fname = "New_York_City_Link_Speed.bsi"
-convert_clean_CSV_to_WEKA_SerializedInstancesSaver(temp_csv_fname,
-                                                   dest_bsi_fname)
+     // Second pass of the parser: convert CSV to BSI -SerializedInstances-,
+     // finding nominal attributes, etc.
 
-new File(temp_csv_fname).delete()
+     val dest_bsi_fname = "New_York_City_Link_Speed.bsi"
+     convert_clean_CSV_to_WEKA_SerializedInstancesSaver(temp_csv_fname,
+                                                        dest_bsi_fname)
 
-load_NewYork_traffic_speed_per_polygon_in_the_city(dest_bsi_fname)
+     new File(temp_csv_fname).delete()
+
+     load_NewYork_traffic_speed_per_polygon_in_the_city(dest_bsi_fname)
+
+}
+
+
+/*
+ * Entry point
+ */
+
+main
 

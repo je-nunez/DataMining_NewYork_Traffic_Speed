@@ -118,7 +118,7 @@ val target_optimum_NYC_speed: Double = 80.0
 
 val print_errors = 0
 
-def error_msg(err_msg: String) {
+def error_msg(err_msg: String) = {
     // Better to do with an error-level, like in Unix
     // (ie., Debug, Info, Notice, Warning, etc)
 

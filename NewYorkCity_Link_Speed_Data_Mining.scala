@@ -70,7 +70,7 @@ val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQue
  * but for current versions of WEKA, the CSV format is easier to read.
  */
 
-val NYC_Traffic_Volume_Counts_URL = 
+val NYC_Traffic_Volume_Counts_URL =
        "https://data.cityofnewyork.us/api/views/p424-amsu/rows.csv?accessType=DOWNLOAD"
 
 
@@ -341,7 +341,7 @@ case class Speed_in_PolygonalSection(speed: Double, polygon_encoded: String,
 /*
  * function: print_polygonal_zone_in_NYC
  *
- * Prints a map.
+ * Prints a polygonal zone in NYC.
  * Currently it uses the Google Maps, but its purpose is to use the New York
  * City Open Data shapefiles, from GIS. (Like, e.g.,
  *
@@ -389,7 +389,26 @@ def print_polygonal_zone_in_NYC(polyg_zone: Speed_in_PolygonalSection,
  * not that zone with traffic speed 0.0, which is pbby won't appear.
  *
  * Similar as function above, this should use GIS from Open Data as not
- * to require API registration keys as Google Maps.
+ * to require API registration keys as Google Maps. The same issue occurs
+ * with Open Street Maps, it also requires an API key to support multiple
+ * layers of visualization (the polygonal zones of traffic in NYC), but we
+ * want to run without API keys:
+ *
+ *    http://wiki.openstreetmap.org/wiki/Static_map_images
+ *
+ *    http://wiki.openstreetmap.org/wiki/Elements
+ *
+ * If the API Key were available from the end-user (e.g., if he/she has
+ * an API Key to query Google Maps for multiple layers), then this data
+ * exploration project of the traffic would have been done instead in
+ * IPython Notepad and Pandas using the Google Maps Python libraries and
+ * the "osgeo.gdal" GeoSpatial Data Abstraction Library:
+ *
+ *   https://developers.google.com/api-client-library/python/apis/mapsengine/v1
+ *
+ *   http://www.osgeo.org/gdal_ogr
+ *
+ * and the "python-weka-wrapper.jar" to use WEKA in Python
  */
 
 def print_speed_vibrancy_map(min_speed: Double,

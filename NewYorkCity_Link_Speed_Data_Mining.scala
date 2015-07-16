@@ -70,8 +70,32 @@ val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQue
  * but for current versions of WEKA, the CSV format is easier to read.
  */
 
-val NYC_Traffic_Volume_Counts = 
+val NYC_Traffic_Volume_Counts_URL = 
        "https://data.cityofnewyork.us/api/views/p424-amsu/rows.csv?accessType=DOWNLOAD"
+
+
+/* The way to join both URLs, the Real-Time Link (Traffic) Speed -which uses
+ * polygonal coordinates of sub-sections in the New York City- and the Traffic
+ * Volume Counts -which uses segments IDs of each part of streets in NYC- is
+ * to employ the the Department of City Planning's LION Single Line Street Base
+ * Map,
+ *
+ *     https://data.cityofnewyork.us/City-Government/LION/2v4z-66xt
+ *
+ *     http://www.nyc.gov/html/dcp/download/bytes/nyc_lion15b.zip
+ *
+ * which gives the polygonal coordinates of each segment ID, and then, with this
+ * polygonal coordinates, to do a polygon intersection between both polygons
+ * (Traffic Volume Counts' versus Real-Time Link (Traffic) Speed's) using the
+ * GeoScript library
+ *
+ * This is an example of the LION file as a master data:
+ *
+ *   http://www.nyc.gov/html/dot/html/motorist/truck_route_nyc_metadata.html
+ */
+
+val NYC_LION_Polyline_Street_Map_URL =
+                  "http://www.nyc.gov/html/dcp/download/bytes/nyc_lion15b.zip"
 
 
 /* Let's say that this is our objective speed, so the New York City can be

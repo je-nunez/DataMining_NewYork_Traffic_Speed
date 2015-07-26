@@ -98,6 +98,23 @@ or the underlying shapefile in, for example,
 or other polygonal section the URL of the NYC Dept. of Transportation contains.
 So far, for simplicity, we use a URL to Google Maps.
 
+# A very first version of the visualization
+
+This is a very first version of the visualization of the real-time
+traffic speed in New York City. (This version uses Google Maps, although
+we intend to replace it with plotting directly with the ESRI Shapefiles
+of New York City -mainly from the Department of City Planning LION GeoDB
+Single Line Street Base-, for Google Maps, Open Street Maps, etc., require
+an API key to query their services for complex, general cases, and we
+want to avoid asking for an API key for this program, but working directly
+with the ESRI shapefiles, which further give other information attached to
+each geo-location, so it is better for Data Mining).
+
+In this map, there are some sections of traffic with a shadow: in them, the
+speed happened to be slower in that real-time sample of the traffic:
+
+![sample New York City real-time traffic speed](/visualiz_traffic_vibrancy_speed_a_first_sample.png?raw=true "sample New York City real-time traffic speed")
+
 # Required Environment Variables
 
 These are the required environment variables:

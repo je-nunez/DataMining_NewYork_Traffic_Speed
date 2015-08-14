@@ -167,6 +167,14 @@ def log_msg(level: LoggingLevel, err_msg: String)
 }
 
 
+abstract class convert_OpenData_CVS_URL_to_WEKA_Serialized_insts(
+     val src_OpenData_CVS_URL: String,
+     val dest_WEKA_Serialized_fname: String,
+     val at_current_download_time: Date
+   ) {
+
+}
+
 /*
  * function: write_clean_CSV_header
  *

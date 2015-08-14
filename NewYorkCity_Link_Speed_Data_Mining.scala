@@ -157,7 +157,7 @@ import LoggingLevel._
 
 val loggingThreshold = NOTICE
 
-def log_msg(level: LoggingLevel, err_msg: String) 
+def log_msg(level: LoggingLevel, err_msg: String)
 {
     // if(level.toInt <= loggingThreshold.toInt) {
 
@@ -256,7 +256,7 @@ def convert_string_to_multiline_geom(in_s: String):
           // It is a valid set of coordinates
           // call GeoScript
           val geometry_instance = builder.LineString(coords.get)
-          log_msg(DEBUG, "Geometry instances is " + geometry_instance)
+          log_msg(DEBUG, "Geometry instance is " + geometry_instance)
           return geometry_instance
       } else
           return null
@@ -272,7 +272,12 @@ def convert_string_to_multiline_geom(in_s: String):
  */
 
 def write_clean_CSV_data_line(data_line: String,
+                              current_epoch: Long,
                               clean_csv_file: java.io.FileWriter) {
+
+      // How old (in seconds) can be the real-time sample we have received in
+      // data_line: the oldest real-time sample we tolerate is 30 minutes old
+      val max_age_tolerance_in_time = ( 30 * 60 * 1000) // Java uses millisecs
 
       // a better parser is needed of the lines that the
       // New York City Link Speed Query gives us
@@ -297,13 +302,45 @@ def write_clean_CSV_data_line(data_line: String,
       val nyc_date_time_fmt = new java.text.SimpleDateFormat(date_fmt)
       nyc_date_time_fmt.setLenient(false)
 
+      var d: Date = null
       try {
-          val d = nyc_date_time_fmt.parse(line_values(4))
+          d = nyc_date_time_fmt.parse(line_values(4))
       } catch {
           case e: java.text.ParseException => {
                log_msg(WARNING, "Ignoring: wrong date-time in 5th field: " +
                                   data_line)
                return
+          }
+      }
+
+      val epoch_of_measure_in_line: Long = d.getTime()
+
+      val diff_in_epochs: Long = (current_epoch - epoch_of_measure_in_line)
+
+      if(diff_in_epochs > max_age_tolerance_in_time) {
+          log_msg(WARNING, "Ignoring: date-time in 5th field is too old: " +
+                           data_line)
+          return
+      } else if(diff_in_epochs < 0) {
+          // The sample in this line has a time ahead of us: it can be
+          // trickier for us to correlate it with the other data, and this
+          // is why can set the log_msg() to ERROR instead of WARNING, so it
+          // is distinctive
+
+          val abs_val_diff_in_epochs = -diff_in_epochs
+          if(abs_val_diff_in_epochs > max_age_tolerance_in_time) {
+               log_msg(ERROR, "Ignoring: date-time in 5th field is ahead " +
+                              "of us by too much: " + abs_val_diff_in_epochs +
+                              " millisecs: current epoch: " + current_epoch +
+                              " epoch of sample: " + epoch_of_measure_in_line +
+                              " sample line: " + data_line)
+               return
+	  } else {
+               // just give a notice about the time of this sample but don't
+               // return from this function
+               log_msg(NOTICE, "a sample has date-time in 5th field ahead " +
+                               "of us by " + abs_val_diff_in_epochs +
+                               " millisecs: " + data_line)
           }
       }
 
@@ -331,7 +368,11 @@ def write_clean_CSV_data_line(data_line: String,
  */
 
 def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String,
+                                           current_time: Date,
                                            dest_file: String) {
+
+      val current_epoch = current_time.getTime()
+
       try {
             val src = scala.io.Source.fromURL(src_url)
             val out = new java.io.FileWriter(dest_file)
@@ -343,7 +384,7 @@ def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String,
                 if ( line_number == 1 )
                      write_clean_CSV_header(line, out)
                 else
-                     write_clean_CSV_data_line(line, out)
+                     write_clean_CSV_data_line(line, current_epoch, out)
                 line_number += 1
             }
 
@@ -435,7 +476,7 @@ def download_url_to_file(src_url: String, dest_file: File) = {
 
 // This is a simplification of the WEKA instances
 
-case class Speed_in_PolygonalSection(speed: Double, 
+case class Speed_in_PolygonalSection(speed: Double,
                                      geometry: jts.geom.Geometry,
                                      polygon_encoded: String,
                                      centroid: Point, well_known_addr: String);
@@ -707,7 +748,7 @@ def download_NYC_TrafficVolumeCount_to_clean_CSV(src_url: String,
                     // write_clean_CSV_header_TrafVolCnt(line, out)
                } else {
                     /* We need to filter only the Traffic Volume Counts
-                     * for the hour and day of the week in 'needed_time' 
+                     * for the hour and day of the week in 'needed_time'
                      * and ignore all the counts for the other hours/days
                      */
                     // TODO
@@ -739,7 +780,7 @@ def main() {
       * counts
       *
       *      NYC_Traffic_Volume_Count_URL (see definition above)
-      * 
+      *
       * because the latter has samples per hour of the day and per day (of
       * the week), ie., a sample for hour 12PM-1PM on Mondays, let's say,
       * according to the City of New York's Open Data.
@@ -759,6 +800,7 @@ def main() {
       * CSV file */
 
      download_NYC_TrafficSpeed_to_clean_CSV(NYC_Traffic_Speed_URL,
+                                            download_time,
                                             tmp_RT_Speed_CsvFname)
 
      /* Second pass of the parser: convert CSV to BSI -SerializedInstances-,
@@ -785,7 +827,7 @@ def main() {
      val tmp_Volum_Count_CsvFname = "New_York_City_Volum_Cnt.csv"
 
      download_NYC_TrafficVolumeCount_to_clean_CSV(NYC_Traffic_Volume_Count_URL,
-                                                  download_time, 
+                                                  download_time,
                                                   tmp_Volum_Count_CsvFname)
 }
 

@@ -45,6 +45,15 @@ as well as other repositories in this account:
 This repository is to work with WEKA on the Open Data provided by the City of
 New York.
 
+# A sub-project
+
+This project uses code and results from this other sub-project that does an
+ETL on `the New York City's Department of City Planning LION Single-line
+Street` database (which changes at most once quarterly) to a custom -and
+smaller- `ESRI Shapefile`:
+
+    https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
+
 # Required Libraries
 
 The New York City Real-Time Traffic Speed URL,

@@ -1,5 +1,6 @@
-#!/usr/bin/env scala -language:postfixOps
+#!/usr/bin/env scala -language:postfixOps -deprecation
 
+import scala.App
 import sys.process._
 import scala.util.control.Exception._
 import _root_.java.io.File
@@ -51,84 +52,166 @@ import weka.core.converters.CSVLoader
 import weka.core.converters.SerializedInstancesLoader
 
 
-// URL for the New York City Real-Time Link (Traffic) Speed (CSV format)
-
-val NYC_Traffic_Speed_URL = "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt"
-
-
-/* This is the lastest Traffic Volume Counts per each segment of each street
- * and per-hour of the day in New York City. This URL doesn't have real-time
- * data, the latest sample of volume traffic was taken in 2013-2012.
+/*
+ * object: Config
  *
- * The master URL is:
- *
- * https://data.cityofnewyork.us/NYC-BigApps/Traffic-Volume-Counts-2012-2013-/p424-amsu
- *
- * where several formats are exported, like XML and JSON -which has a good
- * description of the fields in this dataset:
- *
- * https://data.cityofnewyork.us/api/views/p424-amsu/rows.json?accessType=DOWNLOAD
- *
- * but for current versions of WEKA, the CSV format is easier to read.
+ * It has all the configuration settings
  */
 
-val NYC_Traffic_Volume_Count_URL =
-       "https://data.cityofnewyork.us/api/views/p424-amsu/rows.csv?accessType=DOWNLOAD"
+object Config {
+
+      // URL for the New York City Real-Time Link (Traffic) Speed (CSV format)
+
+      val NYC_Traffic_Speed_URL =
+                "http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt"
+
+      val Final_LinkSpeed_WEKA_SerInsts_fname =
+                                  "New_York_City_Link_Speed.bsi"
+
+      /* This is the latest Traffic Volume Counts per each segment of each
+       * street and per-hour of the day in New York City. This URL doesn't
+       * have real-time data, the latest sample of volume traffic was taken
+       * in 2013-2012.
+       *
+       * The master URL is:
+       *
+       * https://data.cityofnewyork.us/NYC-BigApps/Traffic-Volume-Counts-2012-2013-/p424-amsu
+       *
+       * where several formats are exported, like XML and JSON -which has a
+       * good description of the fields in this dataset:
+       *
+       * https://data.cityofnewyork.us/api/views/p424-amsu/rows.json?accessType=DOWNLOAD
+       *
+       * but for current versions of WEKA, the CSV format is easier to read.
+       */
+
+       val NYC_Traffic_Volume_Count_URL =
+         "https://data.cityofnewyork.us/api/views/p424-amsu/rows.csv?accessType=DOWNLOAD"
+
+      val Final_TrafficVolumeCnt_WEKA_SerInsts_fname =
+                                  "New_York_City_Traffic_Volume_Count.bsi"
 
 
-/* The way to join both URLs, the Real-Time Link (Traffic) Speed -which uses
- * polygonal coordinates of sub-sections in the New York City- and the Traffic
- * Volume Counts -which uses segments IDs of each part of streets in NYC- is
- * necessary to employ the the Department of City Planning's LION Single Line
- * Street Base Map,
- *
- *     https://data.cityofnewyork.us/City-Government/LION/2v4z-66xt
- *
- *     http://www.nyc.gov/html/dcp/download/bytes/nyc_lion15b.zip
- *
- * which gives the polygonal coordinates of each segment ID, and then, with this
- * polygonal coordinates, to do a polygon intersection between both polygons
- * (Traffic Volume Counts' versus Real-Time Link (Traffic) Speed's) using the
- * GeoScript/GeoTools/JTS libraries.
- *
- * This is an example of the LION file as a master data:
- *
- *   http://www.nyc.gov/html/dot/html/motorist/truck_route_nyc_metadata.html
- *
- * Project:
- *
- *   https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
- *
- * is an example of using the above libraries with NYC LION File GeoDataBase.
- * We use this other project for the download and the ETL of the LION GeoDB,
- * since it can be done only once (while the NYC Deparment of City Planning
- * doesn't update the LION GeoDB, which it is done only quarterly, according
- * to:
- *     Resource Maintenance -> Update Frequency
- *
- * in:
- *
- *     http://www.nyc.gov/html/dcp/pdf/bytes/lion_metadata.pdf?v=15b
- */
+       /* The way to join both URLs, the Real-Time Link (Traffic) Speed -which
+        * uses polygonal coordinates of sub-sections in the New York City- and
+        * and the Traffic Volume Counts -which uses segments IDs of each part
+        * of streets in NYC- is necessary to employ the the Department of City
+        * Planning's LION Single Line Street Base Map,
+        *
+        *     https://data.cityofnewyork.us/City-Government/LION/2v4z-66xt
+        *
+        *     http://www.nyc.gov/html/dcp/download/bytes/nyc_lion15b.zip
+        *
+        * which gives the polygonal coordinates of each segment ID, and then,
+        * with this polygonal coordinates, to do a polygon intersection
+        * between both polygons (Traffic Volume Counts' versus Real-Time Link
+        * (Traffic) Speed's) using the GeoScript/GeoTools/JTS libraries.
+        *
+        * This is an example of the LION file as a master data:
+        *
+        *   http://www.nyc.gov/html/dot/html/motorist/truck_route_nyc_metadata.html
+        *
+        * Project:
+        *
+        *   https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
+        *
+        * is an example of using the above libraries with NYC LION File
+        * GeoDataBase. We use this other project for the download and the ETL
+        * of the LION GeoDB, since it can be done only once (while the NYC
+        * Deparment of City Planning doesn't update the LION GeoDB, which it
+        * is done only quarterly, according to:
+        *     Resource Maintenance -> Update Frequency
+        *
+        * in:
+        *
+        *     http://www.nyc.gov/html/dcp/pdf/bytes/lion_metadata.pdf?v=15b
+        */
 
-// Where the ETL left NYC LION import into an ESRI Shapefile:
+       // Where the ETL left NYC LION import into an ESRI Shapefile:
 
-val NYC_LION_Polyline_Street_Map = "etl_dest_shp/nyc_data_exploration.shp"
+       val NYC_LION_Polyline_Street_Map =
+                                    "etl_dest_shp/nyc_data_exploration.shp"
 
 
-/* Let's say that this is our objective speed, so the New York City can be
- * crossed from extreme to extreme in 15 minutes, at this optimum
- * sustained speed. (Higher speeds than this are ideal and better, of course,
- * but more costly.)
- *
- * This target of the optimum speed can be instead a variable determined at
- * run-time (below the maximum of the real-time speeds of traffic is indeed
- * calculated by the code, but this dinamyc maximum can be either slower
- * than this target optimum, or an outlier value that is too high from the
- * target optimum).
- */
+       /* Let's say that this is our objective speed, so the New York City can
+        * be crossed from extreme to extreme in 15 minutes, at this optimum
+        * sustained speed. (Higher speeds than this are ideal and better, of
+        * course, but more costly.)
+        *
+        * This target of the optimum speed can be instead a variable
+        * determined at run-time (below the maximum of the real-time speeds of
+        * traffic is indeed calculated by the code, but this dinamyc maximum
+        * can be either slower than this target optimum, or an outlier value
+        * that is too high from the target optimum).
+        */
 
-val target_optimum_NYC_speed: Double = 80.0
+       val target_optimum_NYC_speed: Double = 80.0
+
+       object OpenData_CSV_Parser {
+            val NYC_LinkSpeed_Fields_Header = Array(
+                                                    "Id",
+                                                    "Speed",
+                                                    "TravelTime",
+                                                    "Status",
+                                                    "DataAsOf",
+                                                    "linkId",
+                                                    "linkPoints",
+                                                    "EncodedPolyLine",
+                                                    "EncodedPolyLineLvls",
+                                                    "Owner",
+                                                    "Transcom_id",
+                                                    "Borough",
+                                                    "linkName"
+                                                   )
+
+            val NYC_LinkSpeed_CSV_to_WEKA_SerInst = Array(
+                                  "-D", "5",
+                                  "-format", "M/d/yyyy HH:mm:ss",
+                                  "-S", "7-9"
+                             )
+
+            val Intermediate_LinkSpeed_clean_CSV =
+                                  "New_York_City_Link_Speed.csv"
+
+            val NYC_TrafficVolumeCnts_Fields_Header = Array(
+                                                    "ID",
+                                                    "Segment ID",
+                                                    "Roadway Name",
+                                                    "From",
+                                                    "To",
+                                                    "Direction",
+                                                    "Date",
+                                                    "12:00-1:00 AM",
+                                                    "1:00-2:00AM",
+                                                    "2:00-3:00AM",
+                                                    "3:00-4:00AM",
+                                                    "4:00-5:00AM",
+                                                    "5:00-6:00AM",
+                                                    "6:00-7:00AM",
+                                                    "7:00-8:00AM",
+                                                    "8:00-9:00AM",
+                                                    "9:00-10:00AM",
+                                                    "10:00-11:00AM",
+                                                    "11:00-12:00PM",
+                                                    "12:00-1:00PM",
+                                                    "1:00-2:00PM",
+                                                    "2:00-3:00PM",
+                                                    "3:00-4:00PM",
+                                                    "4:00-5:00PM",
+                                                    "5:00-6:00PM",
+                                                    "6:00-7:00PM",
+                                                    "7:00-8:00PM",
+                                                    "8:00-9:00PM",
+                                                    "9:00-10:00PM",
+                                                    "10:00-11:00PM",
+                                                    "11:00-12:00AM"
+                                                   )
+
+            val Intermediate_TrafficVolumeCnt_clean_CSV =
+                                  "New_York_City_Traffic_Volume_Cnt.csv"
+       }
+
+} // end of object Config
 
 /*
  * function: log_msg
@@ -140,8 +223,8 @@ val target_optimum_NYC_speed: Double = 80.0
  * integer representing the logging-level threshold.
  */
 
-object LoggingLevel extends Enumeration {
-     type LoggingLevel = Value
+object Logging extends Enumeration {
+     type Logging = Value
 
      val EMERGENCY = Value(0)
      val ALERT = Value(1)
@@ -151,88 +234,420 @@ object LoggingLevel extends Enumeration {
      val NOTICE = Value(5)
      val INFO = Value(6)
      val DEBUG = Value(7)
+
+     val loggingThreshold = ERROR
+
+     def log_msg(level: Logging, err_msg: String)
+     {
+         if(level <= loggingThreshold) {
+             System.err.println(level.toString + ": " + err_msg)
+         }
+     }
 }
 
-import LoggingLevel._
-
-val loggingThreshold = NOTICE
-
-def log_msg(level: LoggingLevel, err_msg: String)
-{
-    // if(level.toInt <= loggingThreshold.toInt) {
-
-    if(level <= loggingThreshold) {
-        System.err.println(level.toString + ": " + err_msg)
-    }
-}
+import Logging._
 
 
-abstract class convert_OpenData_CVS_URL_to_WEKA_Serialized_insts(
-     val src_OpenData_CVS_URL: String,
+/*
+ * class: convert_OpenData_CSV_URL_to_WEKA_Serialized_insts
+ *
+ * An ETL base class (Extract-Transform-Load). Its purpose is to download a
+ * (OpenData) CSV URL, to transform it, and to convert it into a WEKA
+ * Serialized Instance class.
+ */
+
+abstract class convert_OpenData_CSV_URL_to_WEKA_Serialized_insts(
+     val src_OpenData_CSV_URL: String,
      val dest_WEKA_Serialized_fname: String,
      val at_current_download_time: Date
    ) {
 
-}
 
-/*
- * function: write_clean_CSV_header
- *
- * This is ETL. Check if the CVS header from the New York City Real-Time Link
- * Speed URL is the same as we expected, because if the CVS header has changed,
- * then the parser needs to change
- *
- * @param header_line the CVS header line from the Real-Time speed URL to check
- * @param clean_csv_file the clean (ETL-ed filtered) CVS file to write to
- */
+   val expected_header_fields: Array[String]
+   val CSV_to_WEKA_options: Array[String]
+   val intermediate_clean_CSV_fname: String
 
-def write_clean_CSV_header(header_line: String,
-                                clean_csv_file: java.io.FileWriter) {
 
-      var attributes: Array[java.lang.String] = header_line.
-                                                  replaceAllLiterally("\"", "").
-                                                  split("\t")
+   protected def transform_CSV_header_line(cvs_hdr_line: String):
+                                                   Array[java.lang.String]
 
-      /* Check if the attributes in the NYC header line are our
-       * expected attributes, so this parser is quite strict.
-       */
+   /*
+    * function: write_clean_CSV_header
+    *
+    * This is ETL. Check if the CSV header from the OpenData CSV URL is the
+    * same as we expected, because if the CSV header has changed, then the
+    * parser needs to change
+    *
+    * @param header_line the CSV header line from the CSV URL to check
+    * @param clean_csv_file the clean (ETL-ed filtered) CSV file to write to
+    */
 
-      val expected_attributes= Array(
-                                      "Id",
-                                      "Speed",
-                                      "TravelTime",
-                                      "Status",
-                                      "DataAsOf",
-                                      "linkId",
-                                      "linkPoints",
-                                      "EncodedPolyLine",
-                                      "EncodedPolyLineLvls",
-                                      "Owner",
-                                      "Transcom_id",
-                                      "Borough",
-                                      "linkName"
-                                     )
+   protected def write_clean_CSV_header(header_line: String,
+                                   clean_csv_file: java.io.FileWriter) {
+   
+         var attributes: Array[java.lang.String] = 
+                                 transform_CSV_header_line(header_line)
 
-      log_msg(DEBUG, "received attributes: " + attributes.mkString(","))
-      log_msg(DEBUG, "expected: " + expected_attributes.mkString(","))
+         /* Check if the attributes in the NYC header line are our
+          * expected attributes, so this parser is quite strict.
+          */
 
-      if( attributes.deep != expected_attributes.deep ) {
-          // raise exception (and possibly abort this program, since its ETL
-          // parser needs to be changed)
-          log_msg(EMERGENCY, "Format of Real-Time Speed attributes has " +
-                               " changed: "  +
-                               "\n   expected: " +
-                                       expected_attributes.mkString(",") +
-                               "\n   downloaded: " +
+         log_msg(DEBUG, "received attributes: " + attributes.mkString(","))
+         log_msg(DEBUG, "expected: " + expected_header_fields.mkString(","))
+   
+         if( attributes.deep != expected_header_fields.deep ) {
+             // raise exception (and possibly abort this program, since its
+             // ETL parser needs to be changed)
+             log_msg(EMERGENCY, "Format of OpenData CSV header attributes has"
+                                  + " changed: "  +
+                                  "\n   expected: " +
+                                       expected_header_fields.mkString(",") +
+                                  "\n   downloaded: " +
                                        attributes.mkString(",")
-                    )
-          throw new Exception("Format of Real-Time Speed attributes has " +
-                               "changed.")
-      }
+                          )
+             throw new Exception("Format of the OpenData CSV header" +
+                                 " attributes has changed.")
+         }
 
-      // The header line was verified: write it to the CSV file
-      clean_csv_file.write(header_line + "\n")
+         // The header line was verified: write it to the CSV file
+         clean_csv_file.write(header_line + "\n")
+   }
+
+
+   /*
+    * function: transform_CSV_data_line
+    *
+    * Check and tranform if the CSV data-line from the OpenData CSV URL has
+    * all the fields that we expect and in the format we expect them, and
+    * transform it: otherwise, ignore the bad input record.
+    */
+
+  protected def transform_CSV_data_line(data_line: String,
+                                        current_epoch: Long): String
+
+
+   /*
+    * function: write_clean_CSV_data_line
+    *
+    * Check if the CSV data-line from the OpenData URL has all the fields
+    * that we expect and in the format we expect them: otherwise, ignore the
+    * bad input record
+    */
+
+  protected def write_clean_CSV_data_line(data_line: String,
+                                          current_epoch: Long,
+                                          clean_csv_file: java.io.FileWriter)
+  {
+
+         val transformed_line = transform_CSV_data_line(data_line,
+                                                        current_epoch)
+
+         if(transformed_line != null)
+             // Write this data line to the CSV file
+             clean_csv_file.write(transformed_line + "\n")
+  }
+
+
+
+  /*
+   * function: convert_intermediate_CSV_to_WEKA_SerInsts
+   *
+   * Converts the CSV file to a binary file in WEKA SerializedInstancesSaver
+   * format (".bsi" extension) -that currently is the same as the Java
+   * serialized object format.
+   */
+
+  protected def convert_intermediate_CSV_to_WEKA_SerInsts() {
+
+          var cvs_in: CSVLoader = new CSVLoader();
+          /* Some options for the cleaned OpenData CSV, ie., which attributes
+           * we know are date (and which date format), and which attributes
+           * we know are string (and not to be analyzed as nominal values)
+           */
+          cvs_in.setOptions(CSV_to_WEKA_options)
+          cvs_in.setSource(new File(intermediate_clean_CSV_fname));
+          var instances_in: Instances = cvs_in.getDataSet();
+
+          var sinst_out: SerializedInstancesSaver =
+                                             new SerializedInstancesSaver();
+          sinst_out.setInstances(instances_in);
+          sinst_out.setFile(new File(dest_WEKA_Serialized_fname));
+          sinst_out.writeBatch();
+  }
+
+
+
+  protected def download_and_clean_into_intermediate_CSV() {
+
+          val current_epoch = at_current_download_time.getTime()
+
+          try {
+                val src = scala.io.Source.fromURL(src_OpenData_CSV_URL)
+                val out = new java.io.FileWriter(intermediate_clean_CSV_fname)
+
+                var line_number = 1
+
+                for (line <- src.getLines) {
+                    // out.write(line + "\n")
+                    if ( line_number == 1 )
+                         write_clean_CSV_header(line, out)
+                    else
+                         write_clean_CSV_data_line(line, current_epoch, out)
+                    line_number += 1
+                }
+
+                src.close
+                out.close
+          } catch {
+                case e: java.io.IOException => {
+                           log_msg(ERROR, "I/O error occurred" + e.getMessage)
+                        }
+          }
+  }
+
+
+  def ETL_OpenData_CSV_URL_into_WEKA() {
+
+          /* download the OpenData CSV URL and clean it into CSV filename 
+           * "intermediate_clean_CSV_fname"
+           */
+          download_and_clean_into_intermediate_CSV()
+
+          /* Second pass of the parser: convert CSV to BSI
+           * -SerializedInstances-, finding nominal attributes, etc. */
+
+          convert_intermediate_CSV_to_WEKA_SerInsts()
+
+          /* delete the intermediate, clean CSV file */
+          new File(intermediate_clean_CSV_fname).delete()
+  }
+
+
 }
+
+
+class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
+     val src_LinkSpeed_CSV_URL: String,
+     val dest_Speed_WEKA_Serialized_fname: String,
+     val at_Speed_current_download_time: Date
+   ) extends convert_OpenData_CSV_URL_to_WEKA_Serialized_insts(
+         src_LinkSpeed_CSV_URL,
+         dest_Speed_WEKA_Serialized_fname,
+         at_Speed_current_download_time
+   ) {
+
+
+   override val expected_header_fields = Config.OpenData_CSV_Parser.
+                                              NYC_LinkSpeed_Fields_Header
+
+   override val CSV_to_WEKA_options = Config.OpenData_CSV_Parser.
+                                            NYC_LinkSpeed_CSV_to_WEKA_SerInst
+
+   override val intermediate_clean_CSV_fname = Config.OpenData_CSV_Parser.
+                                            Intermediate_LinkSpeed_clean_CSV
+
+   override def transform_CSV_header_line(cvs_hdr_line: String):
+                                                   Array[java.lang.String]
+       =
+         cvs_hdr_line.replaceAllLiterally("\"", "").split("\t")
+
+   /*
+    * function: transform_CSV_data_line
+    *
+    * Check and tranform if the CSV data-line from the OpenData CSV URL has
+    * all the fields that we expect and in the format we expect them, and
+    * transform it: otherwise, ignore the bad input record.
+    */
+
+  protected def transform_CSV_data_line(data_line: String,
+                                        current_epoch: Long): String = {
+
+         // How old (in seconds) can be the real-time sample we have received
+         // in data_line: the oldest real-time sample we tolerate is 30
+         // minutes old (me multiply by * 1000 because Java uses millisecs)
+
+         val max_age_tolerance_in_time = (30 * 60 * 1000)
+
+         // a better parser is needed of the lines that the
+         // New York City Link Speed Query gives us
+         var line_values: Array[java.lang.String] = data_line.
+                                               replaceAll("\\\\", "\\\\\\\\").
+                                               stripPrefix("\"").
+                                               stripSuffix("\"").
+                                               split("\"\\s+\"")
+
+         // We expect that the parsing above returned 13 fields in this line
+
+         if(line_values.length != 13) {
+             log_msg(WARNING, "Ignoring: doesn't have right number of fields: "
+                              + data_line)
+             return null
+         }
+
+         // Validate that the fifth field of the New York City Traffic Speed
+         // is a date in the format "M/d/yyyy HH:mm:ss"
+         val date_fmt = "M/d/yyyy HH:mm:ss"
+         // JODA is better
+         val nyc_date_time_fmt = new java.text.SimpleDateFormat(date_fmt)
+         nyc_date_time_fmt.setLenient(false)
+
+         var d: Date = null
+         try {
+             d = nyc_date_time_fmt.parse(line_values(4))
+         } catch {
+             case e: java.text.ParseException => {
+                  log_msg(WARNING, "Ignoring: wrong date-time in 5th field: "
+                                   + data_line)
+                  return null
+             }
+         }
+
+         val epoch_of_measure_in_line: Long = d.getTime()
+
+         val diff_in_epochs: Long = (current_epoch - epoch_of_measure_in_line)
+
+         if(diff_in_epochs > max_age_tolerance_in_time) {
+             log_msg(WARNING, "Ignoring: date-time in 5th field is too old: "
+                              + data_line)
+             return null
+         } else if(diff_in_epochs < 0) {
+             // The sample in this line has a time ahead of us: it can be
+             // trickier for us to correlate it with the other data, and this
+             // is why can set the log_msg() to ERROR instead of WARNING, so
+             // it is distinctive
+
+             val abs_val_diff_in_epochs = -diff_in_epochs
+             if(abs_val_diff_in_epochs > max_age_tolerance_in_time) {
+                  log_msg(ERROR, "Ignoring: date-time in 5th field is ahead " +
+                                 "of us by too much: " + abs_val_diff_in_epochs +
+                                 " millisecs: current epoch: " + current_epoch +
+                                 " epoch of sample: " + epoch_of_measure_in_line +
+                                 " sample line: " + data_line)
+                  return null
+	     } else {
+                  // just give a notice about the time of this sample but
+                  // don't return from this function
+                  log_msg(NOTICE, "a sample has date-time in 5th field ahead "
+                                  + "of us by " + abs_val_diff_in_epochs +
+                                  " millisecs: " + data_line)
+             }
+         }
+
+         // the seventh field is the list of coordinates to which this speed
+         // applies
+         val geometry_inst = convert_string_to_multiline_geom(line_values(6))
+         if(geometry_inst == null) {
+             // This field didn't seem to have a valid, comma-separated, list
+             // of coordinates: then ignore this line in the CSV file
+             log_msg(WARNING, "Ignoring: wrong geometry in 7th field: " +
+                              data_line)
+             return null
+         }
+
+         return data_line
+     }
+
+}
+
+
+class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
+     val src_LinkSpeed_CSV_URL: String,
+     val dest_Speed_WEKA_Serialized_fname: String,
+     val at_Speed_current_download_time: Date
+   ) extends convert_OpenData_CSV_URL_to_WEKA_Serialized_insts(
+         src_LinkSpeed_CSV_URL,
+         dest_Speed_WEKA_Serialized_fname,
+         at_Speed_current_download_time
+   ) {
+
+
+   override val expected_header_fields = Config.OpenData_CSV_Parser.
+                                          NYC_TrafficVolumeCnts_Fields_Header
+
+   override val CSV_to_WEKA_options = Config.OpenData_CSV_Parser.
+                                          NYC_LinkSpeed_CSV_to_WEKA_SerInst
+
+   override val intermediate_clean_CSV_fname = Config.OpenData_CSV_Parser.
+                                     Intermediate_TrafficVolumeCnt_clean_CSV
+
+   override def transform_CSV_header_line(cvs_hdr_line: String):
+                                                   Array[java.lang.String]
+       =
+         cvs_hdr_line.split(",")
+
+   /*
+    * function: transform_CSV_data_line
+    *
+    * Check and tranform if the CSV data-line from the OpenData CSV URL has
+    * all the fields that we expect and in the format we expect them, and
+    * transform it: otherwise, ignore the bad input record.
+    */
+
+  protected def transform_CSV_data_line(data_line: String,
+                                        current_epoch: Long): String = {
+
+         var line_values: Array[java.lang.String] = data_line.
+                                               replaceAll("'", "-").
+                                               split(",")
+
+         // We expect that the parsing above returned 31 fields in this line
+
+         if(line_values.length != 31) {
+             log_msg(WARNING, "Ignoring: doesn't have right number of fields: "
+                              + data_line)
+             return null
+         }
+
+         // Validate that the seventh field of New York City Traffic Volume
+         // Count is a date in the format "M/d/yyyy"
+         val date_fmt = "M/d/yyyy"
+         // JODA is better
+         val nyc_date_time_fmt = new java.text.SimpleDateFormat(date_fmt)
+         nyc_date_time_fmt.setLenient(false)
+
+         var d: Date = null
+         try {
+             d = nyc_date_time_fmt.parse(line_values(6))
+         } catch {
+             case e: java.text.ParseException => {
+                  log_msg(WARNING, "Ignoring: wrong date in 7th field: " +
+                                   data_line)
+                  return null
+             }
+         }
+
+         // Check that the fields 1,2, and 8 to 31 are positive integers
+
+         for( field_index <- 0 to 30
+                  if ( field_index <=1 || field_index >= 7 ) )
+         {
+              val field_value = line_values(field_index)
+              var int_field_value: Int = -1
+              try { 
+                     int_field_value = field_value.toInt
+              } catch { 
+                     case e: NumberFormatException => {
+                            log_msg(WARNING, "Ignoring: not an integer in " +
+                                     (field_index + 1) + " field: value: " +
+                                     field_value + "; line: " + data_line)
+                            return null
+                       }
+              }
+
+              if (int_field_value <= 0) {
+                  log_msg(WARNING, "Ignoring: not a positive int in " +
+                                   (field_index + 1) + " field: value: " +
+                                   int_field_value + "; line: " +
+                                   data_line)
+                  return null
+              }
+         }
+
+         return line_values.mkString(",")
+     }
+
+}
+
 
 
 /*
@@ -268,201 +683,6 @@ def convert_string_to_multiline_geom(in_s: String):
           return geometry_instance
       } else
           return null
-}
-
-
-/*
- * function: write_clean_CSV_data_line
- *
- * This is ETL. Check if the CVS data-line from the New York City Real-Time
- * Link Speed URL has all the fields that we expect and in the format we
- * expect them: otherwise, ignore the bad input record
- */
-
-def write_clean_CSV_data_line(data_line: String,
-                              current_epoch: Long,
-                              clean_csv_file: java.io.FileWriter) {
-
-      // How old (in seconds) can be the real-time sample we have received in
-      // data_line: the oldest real-time sample we tolerate is 30 minutes old
-      val max_age_tolerance_in_time = ( 30 * 60 * 1000) // Java uses millisecs
-
-      // a better parser is needed of the lines that the
-      // New York City Link Speed Query gives us
-      var line_values: Array[java.lang.String] = data_line.
-                                                 replaceAll("\\\\", "\\\\\\\\").
-                                                 stripPrefix("\"").
-                                                 stripSuffix("\"").
-                                                 split("\"\\s+\"")
-
-      // We expect that the parsing above returned 13 fields in this line
-
-      if(line_values.length != 13) {
-          log_msg(WARNING, "Ignoring: doesn't have right number of fields: "
-                             + data_line)
-          return
-      }
-
-      // Validate that the fifth field of the New York City Traffic Speed is
-      // a date in the format "M/d/yyyy HH:mm:ss"
-      val date_fmt = "M/d/yyyy HH:mm:ss"
-      // JODA is better
-      val nyc_date_time_fmt = new java.text.SimpleDateFormat(date_fmt)
-      nyc_date_time_fmt.setLenient(false)
-
-      var d: Date = null
-      try {
-          d = nyc_date_time_fmt.parse(line_values(4))
-      } catch {
-          case e: java.text.ParseException => {
-               log_msg(WARNING, "Ignoring: wrong date-time in 5th field: " +
-                                  data_line)
-               return
-          }
-      }
-
-      val epoch_of_measure_in_line: Long = d.getTime()
-
-      val diff_in_epochs: Long = (current_epoch - epoch_of_measure_in_line)
-
-      if(diff_in_epochs > max_age_tolerance_in_time) {
-          log_msg(WARNING, "Ignoring: date-time in 5th field is too old: " +
-                           data_line)
-          return
-      } else if(diff_in_epochs < 0) {
-          // The sample in this line has a time ahead of us: it can be
-          // trickier for us to correlate it with the other data, and this
-          // is why can set the log_msg() to ERROR instead of WARNING, so it
-          // is distinctive
-
-          val abs_val_diff_in_epochs = -diff_in_epochs
-          if(abs_val_diff_in_epochs > max_age_tolerance_in_time) {
-               log_msg(ERROR, "Ignoring: date-time in 5th field is ahead " +
-                              "of us by too much: " + abs_val_diff_in_epochs +
-                              " millisecs: current epoch: " + current_epoch +
-                              " epoch of sample: " + epoch_of_measure_in_line +
-                              " sample line: " + data_line)
-               return
-	  } else {
-               // just give a notice about the time of this sample but don't
-               // return from this function
-               log_msg(NOTICE, "a sample has date-time in 5th field ahead " +
-                               "of us by " + abs_val_diff_in_epochs +
-                               " millisecs: " + data_line)
-          }
-      }
-
-      // the seventh field is the list of coordinates to which this speed
-      // applies
-      val geometry_inst = convert_string_to_multiline_geom(line_values(6))
-      if(geometry_inst == null) {
-          // This field didn't seem to have a valid, comma-separated, list
-          // of coordinates: then ignore this line in the CSV file
-          log_msg(WARNING, "Ignoring: wrong geometry in 7th field: " +
-                             data_line)
-          return
-      }
-
-      // Write this data line to the CSV file
-      clean_csv_file.write(data_line + "\n")
-}
-
-
-/*
- * function: download_NYC_TrafficSpeed_to_clean_CSV
- *
- * This is ETL. Download the CVS from the New York City Real-Time URL and
- * validates its header and filters the records that are valid.
- */
-
-def download_NYC_TrafficSpeed_to_clean_CSV(src_url: String,
-                                           current_time: Date,
-                                           dest_file: String) {
-
-      val current_epoch = current_time.getTime()
-
-      try {
-            val src = scala.io.Source.fromURL(src_url)
-            val out = new java.io.FileWriter(dest_file)
-
-            var line_number = 1
-
-            for (line <- src.getLines) {
-                // out.write(line + "\n")
-                if ( line_number == 1 )
-                     write_clean_CSV_header(line, out)
-                else
-                     write_clean_CSV_data_line(line, current_epoch, out)
-                line_number += 1
-            }
-
-            src.close()
-            out.close
-      } catch {
-            case e: java.io.IOException => {
-                         log_msg(ERROR, "I/O error occurred" + e.getMessage)
-                       }
-      }
-}
-
-
-/*
- * Not in use: see convert_clean_CSV_to_WEKA_SerializedInstancesSaver()
- *
-def convert_clean_CSV_to_WEKA_ARFF(src_csv: String, dest_arff: String) {
-
-      // Modified from https://weka.wikispaces.com/Converting+CSV+to+ARFF
-      // to add the format of our dates, and nominal attributes
-
-      var cvs_in: CSVLoader = new CSVLoader();
-      cvs_in.setOptions(Array(
-                              "-D", "5",
-                              "-format", "M/d/yyyy HH:mm:ss",
-                              "-S", "7-9"
-                             )
-                       );
-      cvs_in.setSource(new File(src_csv));
-      var instances_in: Instances = cvs_in.getDataSet();
-
-      var arff_out: ArffSaver = new ArffSaver();
-      arff_out.setInstances(instances_in);
-      arff_out.setFile(new File(dest_arff));
-      arff_out.writeBatch();
-}
- *
- */
-
-
-/*
- * function: convert_clean_CSV_to_WEKA_SerializedInstancesSaver
- *
- * Converts the CSV file to a binary file in WEKA SerializedInstancesSaver
- * format (".bsi" extension) -that currently is the same as the Java
- * serialized object format.
- */
-
-def convert_clean_CSV_to_WEKA_SerializedInstancesSaver(src_csv: String,
-                                                       dest_bsi: String) {
-
-      var cvs_in: CSVLoader = new CSVLoader();
-      /* Some options for the New York City's Traffic Speed CVS, ie., which
-       * attributes we know are date (and which date format), and which
-       * attributes we know are string (and not to be analyzed as nominal
-       * values)
-       */
-      cvs_in.setOptions(Array(
-                              "-D", "5",
-                              "-format", "M/d/yyyy HH:mm:ss",
-                              "-S", "7-9"
-                             )
-                       );
-      cvs_in.setSource(new File(src_csv));
-      var instances_in: Instances = cvs_in.getDataSet();
-
-      var sinst_out: SerializedInstancesSaver = new SerializedInstancesSaver();
-      sinst_out.setInstances(instances_in);
-      sinst_out.setFile(new File(dest_bsi));
-      sinst_out.writeBatch();
 }
 
 
@@ -581,11 +801,11 @@ def print_speed_vibrancy_map(min_speed: Double,
            // Find which color according to the traffic speed to print this
            // zone in New York City: green is the best, red is slowest
            var color : Long = 0x00FF00
-           if (polygon_zone.speed >= target_optimum_NYC_speed)
+           if (polygon_zone.speed >= Config.target_optimum_NYC_speed)
                  color = 0x00FF00
            else {
                  val delta_speed = ( polygon_zone.speed - min_speed ) /
-                                      ( target_optimum_NYC_speed - min_speed )
+                               ( Config.target_optimum_NYC_speed - min_speed )
 
                  val delta_color: Int = 0x00FF00 - 0x0000FF
                  color = 0x0000FF + scala.math.round(delta_color * delta_speed)
@@ -737,49 +957,11 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String)
 }
 
 
-def download_NYC_TrafficVolumeCount_to_clean_CSV(src_url: String,
-                                                 needed_time: Date,
-                                                 dest_file: String)
-{
-     // TODO: polymorphism with appropiate sub-classes, or filtering functions
-     //       as additional parameters
-     try {
-           val src = scala.io.Source.fromURL(src_url)
-           val out = new java.io.FileWriter(dest_file)
-
-           var line_number = 1
-
-           for (line <- src.getLines) {
-               // out.write(line + "\n")
-               if ( line_number == 1 ) {
-                    // TODO
-                    // write_clean_CSV_header_TrafVolCnt(line, out)
-               } else {
-                    /* We need to filter only the Traffic Volume Counts
-                     * for the hour and day of the week in 'needed_time'
-                     * and ignore all the counts for the other hours/days
-                     */
-                    // TODO
-                    // write_clean_CSV_data_line_TrafVolCnt(line,
-                    //                                      needed_time, out)
-               }
-               line_number += 1
-          }
-
-          src.close()
-          out.close()
-     } catch {
-           case e: java.io.IOException => {
-                        log_msg(ERROR, "I/O error occurred" + e.getMessage)
-                      }
-     }
-
-}
-
 /*
  *   MAIN PROGRAM
  *
  */
+
 
 def main() {
 
@@ -797,46 +979,38 @@ def main() {
 
      val download_time = Calendar.getInstance().getTime()
 
-     /* The temporary filename is "New_York_City_Link_Speed.csv" because WEKA
-      * will use the filename (without extension) as the @relation name in
-      * the ARFF file
+     /* The temporary filename is "New_York_City_Link_Speed.csv" because
+      * WEKA will use the filename (without extension) as the @relation
+      * name in the ARFF file
       */
 
-     val tmp_RT_Speed_CsvFname = "New_York_City_Link_Speed.csv"
+     val realt_speed_downldr =
+                new convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
+                               Config.NYC_Traffic_Speed_URL,
+                               Config.Final_LinkSpeed_WEKA_SerInsts_fname,
+                               download_time
+                           )
 
-     /* First pass of the parser: download URL and clean the records to a
-      * CSV file */
+     realt_speed_downldr.ETL_OpenData_CSV_URL_into_WEKA()
 
-     download_NYC_TrafficSpeed_to_clean_CSV(NYC_Traffic_Speed_URL,
-                                            download_time,
-                                            tmp_RT_Speed_CsvFname)
-
-     /* Second pass of the parser: convert CSV to BSI -SerializedInstances-,
-      * finding nominal attributes, etc. */
-
-     val dest_RT_Speed_Bsi_Fname = "New_York_City_Link_Speed.bsi"
-     convert_clean_CSV_to_WEKA_SerializedInstancesSaver(tmp_RT_Speed_CsvFname,
-                                                      dest_RT_Speed_Bsi_Fname)
-
-     new File(tmp_RT_Speed_CsvFname).delete()
 
      val polygon_realt_speeds =
-            load_NewYork_traffic_speed_per_polygon_in_the_city(
-                                             dest_RT_Speed_Bsi_Fname
-                                                              )
+                 load_NewYork_traffic_speed_per_polygon_in_the_city(
+                                   Config.Final_LinkSpeed_WEKA_SerInsts_fname
+                                                                   )
 
      /* Process the Traffic Volume Counts per segment and per hour to
       * unite it with the Real-Time Traffic Speed.
-      * We need to correlate the Traffic Volume Counts only with the
-      * date and time of the download of the Real-Time Speed, and
-      * ignore all other Traffic Volume Counts for other hours/days.
       */
 
-     val tmp_Volum_Count_CsvFname = "New_York_City_Volum_Cnt.csv"
+     val traffic_downldr =
+             new convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
+                           Config.NYC_Traffic_Volume_Count_URL,
+                           Config.Final_TrafficVolumeCnt_WEKA_SerInsts_fname,
+                           download_time
+                        )
 
-     download_NYC_TrafficVolumeCount_to_clean_CSV(NYC_Traffic_Volume_Count_URL,
-                                                  download_time,
-                                                  tmp_Volum_Count_CsvFname)
+     traffic_downldr.ETL_OpenData_CSV_URL_into_WEKA()
 }
 
 

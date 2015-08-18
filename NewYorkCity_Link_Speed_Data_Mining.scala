@@ -19,6 +19,7 @@ import org.geoscript.geometry.io._
 import org.geoscript.geometry._
 import org.geoscript.viewer._
 import com.vividsolutions._
+import org.geotools.feature.DefaultFeatureCollection
 
 /*
  * GeoScript Polygon classes, since the New York City Real-Time
@@ -52,10 +53,18 @@ import weka.core.converters.CSVLoader
 import weka.core.converters.SerializedInstancesLoader
 
 
+/* Internal packages of this project. In this very first version, they
+ * have this simple prefix, but will surely change. */
+
 import src.main.scala.logging.Logging._
 
 import src.main.scala.config.Config
 
+import src.main.scala.graphics.shapefile._
+
+import src.main.scala.types.Speed_in_PolygonalSection
+
+import src.main.scala.utils.conversion.String_to_Geom
 
 /*
  * class: convert_OpenData_CSV_URL_to_WEKA_Serialized_insts
@@ -261,6 +270,25 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
          cvs_hdr_line.replaceAllLiterally("\"", "").split("\t")
 
    /*
+    * constructor this(at_Speed_current_download_time: Date)
+    *
+    * An auxiliary constructor which assumes that the NYC OpenData URL and
+    * the destination WEKA Binary serialized instances will be to their
+    * default location.
+    *
+    * @param at_Speed_current_download_time the reference Datatime at which
+    *                                       this processing is happening
+    */
+
+   def this(at_Speed_current_download_time: Date) =
+                        this(
+                               Config.NYC_Traffic_Speed_URL,
+                               Config.Final_LinkSpeed_WEKA_SerInsts_fname,
+                               at_Speed_current_download_time
+                           )
+
+
+   /*
     * function: transform_CSV_data_line
     *
     * Check and tranform if the CSV data-line from the OpenData CSV URL has
@@ -271,9 +299,11 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
   protected def transform_CSV_data_line(data_line: String,
                                         current_epoch: Long): String = {
 
-         // How old (in seconds) can be the real-time sample we have received
-         // in data_line: the oldest real-time sample we tolerate is 30
-         // minutes old (me multiply by * 1000 because Java uses millisecs)
+         /* How old (in milliseconds) can be the real-time sample we have
+          * received in data_line: the oldest real-time sample we tolerate
+          * is 30 minutes old (me multiply by * 1000 because Java uses
+          * millisecs)
+          */
 
          val max_age_tolerance_in_time = (30 * 60 * 1000)
 
@@ -344,7 +374,7 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
 
          // the seventh field is the list of coordinates to which this speed
          // applies
-         val geometry_inst = convert_string_to_multiline_geom(line_values(6))
+         val geometry_inst = String_to_Geom(line_values(6))
          if(geometry_inst == null) {
              // This field didn't seem to have a valid, comma-separated, list
              // of coordinates: then ignore this line in the CSV file
@@ -362,11 +392,11 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
 class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
      val src_LinkSpeed_CSV_URL: String,
      val dest_Speed_WEKA_Serialized_fname: String,
-     val at_Speed_current_download_time: Date
+     val at_Traffic_Vol_Cnt_current_download_time: Date
    ) extends convert_OpenData_CSV_URL_to_WEKA_Serialized_insts(
          src_LinkSpeed_CSV_URL,
          dest_Speed_WEKA_Serialized_fname,
-         at_Speed_current_download_time
+         at_Traffic_Vol_Cnt_current_download_time
    ) {
 
 
@@ -378,6 +408,25 @@ class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
 
    override val intermediate_clean_CSV_fname = Config.OpenData_CSV_Parser.
                                      Intermediate_TrafficVolumeCnt_clean_CSV
+
+   /*
+    * constructor this(at_current_download_time: Date)
+    *
+    * An auxiliary constructor which assumes that the NYC OpenData URL and
+    * the destination WEKA Binary serialized instances will be to their
+    * default location.
+    *
+    * @param at_current_download_time the reference Datatime at which this
+    *                                 processing is happening
+    */
+
+   def this(at_current_download_time: Date) =
+                   this(
+                           Config.NYC_Traffic_Volume_Count_URL,
+                           Config.Final_TrafficVolumeCnt_WEKA_SerInsts_fname,
+                           at_current_download_time
+                      )
+
 
    override def transform_CSV_header_line(cvs_hdr_line: String):
                                                    Array[java.lang.String]
@@ -460,42 +509,6 @@ class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
 
 
 /*
- * function: convert_string_to_multiline_geom
- *
- * Converts a string with a sequence of coordinates of the form:
- *
- *      X1 Y1,X2 Y2,...,X[n] Y[n]
- *
- * where each pair "X[i] Y[i]" is separated from the previous and next
- * pairs by a comma ",", in to Geometry.
- *
- * @param in_s the input string with the csv of the coordinates
- * @return the geome
- */
-
-def convert_string_to_multiline_geom(in_s: String):
-            jts.geom.Geometry =
-{
-      val coords = catching(classOf[java.lang.RuntimeException]) opt
-                     in_s.split("\\s+").map {
-                                case point_str: String => {
-                                    val coord = point_str.split(",")
-                                    (coord(0).toDouble, coord(1).toDouble)
-                                }
-                         }
-
-      if (coords != null && coords.isDefined && coords.get.length > 0)  {
-          // It is a valid set of coordinates
-          // call GeoScript
-          val geometry_instance = builder.LineString(coords.get)
-          log_msg(DEBUG, "Geometry instance is " + geometry_instance)
-          return geometry_instance
-      } else
-          return null
-}
-
-
-/*
  * function: download_url_to_file
  *
  * Downloads an URL to a local file (the contents of the URL are not
@@ -511,13 +524,6 @@ def download_url_to_file(src_url: String, dest_file: File) = {
 }
 
 
-// This is a simplification of the WEKA instances
-
-case class Speed_in_PolygonalSection(speed: Double,
-                                     geometry: jts.geom.Geometry,
-                                     polygon_encoded: String,
-                                     centroid: Point, well_known_addr: String);
-
 
 /*
  * function: print_polygonal_zone_in_NYC
@@ -530,7 +536,9 @@ case class Speed_in_PolygonalSection(speed: Double,
  *  https://data.cityofnewyork.us/Housing-Development/Building-Footprints/tb92-6tj8
  *
  * although this one has too much information, since it even has the building
- * foot-prints.
+ * foot-prints.) When the code use shapefiles instead of Google Maps, its
+ * "color" parameter below will be substituted by a GeoTools' "Style" object,
+ * which is richer.
  */
 
 def print_polygonal_zone_in_NYC(polyg_zone: Speed_in_PolygonalSection,
@@ -694,7 +702,7 @@ def load_NewYork_traffic_speed_per_polygon_in_the_city(weka_bsi_file: String)
                    "\n         inside polygonal section " + polygon_str +
                    "\n         reference point: '" + well_known_address + "'")
 
-         val geometry_instance = convert_string_to_multiline_geom(polygon_str)
+         val geometry_instance = String_to_Geom(polygon_str)
 
          if (geometry_instance != null)  {
                  // Find the centroid point of this geometry
@@ -788,20 +796,14 @@ def main() {
 
      val download_time = Calendar.getInstance().getTime()
 
-     /* The temporary filename is "New_York_City_Link_Speed.csv" because
-      * WEKA will use the filename (without extension) as the @relation
-      * name in the ARFF file
-      */
+     /* Convert the New York City Real-Time Speed URL to WEKA */
 
      val realt_speed_downldr =
                 new convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
-                               Config.NYC_Traffic_Speed_URL,
-                               Config.Final_LinkSpeed_WEKA_SerInsts_fname,
                                download_time
                            )
 
      realt_speed_downldr.ETL_OpenData_CSV_URL_into_WEKA()
-
 
      val polygon_realt_speeds =
                  load_NewYork_traffic_speed_per_polygon_in_the_city(
@@ -814,12 +816,23 @@ def main() {
 
      val traffic_downldr =
              new convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
-                           Config.NYC_Traffic_Volume_Count_URL,
-                           Config.Final_TrafficVolumeCnt_WEKA_SerInsts_fname,
                            download_time
                         )
 
      traffic_downldr.ETL_OpenData_CSV_URL_into_WEKA()
+
+     /* Open the ESRI Shapefile with the New York City LION Single-Line Street
+      * GeoDB. This ESRI Shapefile was a download from an ETL in project:
+      *
+      * https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
+      *
+      */
+
+     val nyc_lion = new ExistingShapefile(Config.NYC_LION_Polyline_Street_Map)
+     nyc_lion.open()
+     val lion_in_realt_speeds = new DefaultFeatureCollection()
+     nyc_lion.filter_geom_features(polygon_realt_speeds, lion_in_realt_speeds)
+
 }
 
 

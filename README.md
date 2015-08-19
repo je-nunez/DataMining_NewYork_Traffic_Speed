@@ -54,6 +54,13 @@ smaller- `ESRI Shapefile`:
 
     https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
 
+This project refers to this other sub-project as a git-submodule, so you may
+need to:
+
+     git clone --recurse-submodules  <git-to-this-repository>
+
+to clone also that sub-project.
+
 # Required Libraries
 
 The New York City Real-Time Traffic Speed URL,

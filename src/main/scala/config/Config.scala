@@ -79,7 +79,7 @@ object Config {
        // Where the ETL left NYC LION import into an ESRI Shapefile:
 
        val NYC_LION_Polyline_Street_Map =
-                                    "etl_dest_shp/nyc_data_exploration.shp"
+                "NYC_LION_to_Shapefile/etl_dest_shp/nyc_data_exploration.shp"
 
 
        /* Let's say that this is our objective speed, so the New York City can

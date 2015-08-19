@@ -17,6 +17,7 @@ import org.geotools.feature.DefaultFeatureCollection
 
 import src.main.scala.types.Speed_in_PolygonalSection
 
+import src.main.scala.logging.Logging._
 
 
 class ExistingShapefile(
@@ -47,14 +48,15 @@ class ExistingShapefile(
    
        val shp = Shapefile(shp_filename)
    
-       // println("DEBUG: Class of ShpFile: " + shp.getClass)
+       log_msg(DEBUG, "Class of ShpFile: " + shp.getClass)
    
-       // println("DEBUG: Number of items in the shapefile: " + shp.count)
+       log_msg(DEBUG, "Number of items in the shapefile: " + shp.count)
    
-       // println("DEBUG: Schema: " + shp.schema)
+       log_msg(DEBUG, "Schema: " + shp.schema)
    
-       // println("DEBUG: Features: " + shp.features)
-       // println("DEBUG: Bounds rectangle: " + shp.features.getBounds())
+       log_msg(DEBUG, "Features: " + shp.features)
+
+       log_msg(DEBUG, "Bounds rectangle: " + shp.features.getBounds())
    
        layer = shp
    }

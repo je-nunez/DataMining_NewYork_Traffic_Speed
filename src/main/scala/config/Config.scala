@@ -44,7 +44,7 @@ object Config {
        /* The way to join both URLs, the Real-Time Link (Traffic) Speed -which
         * uses polygonal coordinates of sub-sections in the New York City- and
         * and the Traffic Volume Counts -which uses segments IDs of each part
-        * of streets in NYC- is necessary to employ the the Department of City
+        * of streets in NYC- is necessary to employ the Department of City
         * Planning's LION Single Line Street Base Map,
         *
         *     https://data.cityofnewyork.us/City-Government/LION/2v4z-66xt
@@ -60,14 +60,14 @@ object Config {
         *
         *   http://www.nyc.gov/html/dot/html/motorist/truck_route_nyc_metadata.html
         *
-        * Project:
+        * The sub-project:
         *
         *   https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
         *
-        * is an example of using the above libraries with NYC LION File
+        * is an example of using the above libraries with the NYC LION File
         * GeoDataBase. We use this other project for the download and the ETL
         * of the LION GeoDB, since it can be done only once (while the NYC
-        * Deparment of City Planning doesn't update the LION GeoDB, which it
+        * Deparment of City Planning doesn't update the LION GeoDB, which
         * is done only quarterly, according to:
         *     Resource Maintenance -> Update Frequency
         *

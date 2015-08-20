@@ -23,7 +23,7 @@ object Logging extends Enumeration {
      val INFO = Value(6)
      val DEBUG = Value(7)
 
-     var loggingThreshold: Logging = NOTICE
+     var loggingThreshold: Logging = ERROR
 
      def log_msg(level: Logging, err_msg: String)
      {

@@ -92,40 +92,50 @@ class ExistingShapefile(
                 val feature =
                f.asInstanceOf[org.geotools.feature.simple.SimpleFeatureImpl]
 
-                var this_feature_is_selected: Boolean = false
-      
-                // See if this feature is contained in one of the
-                // filtering_geoms
-                for (constr <- filtering_geoms) { 
-                    // this feature's geometry intersects this filter?
-                    val feat_geom: jts.geom.Geometry =
+                val feat_geom: jts.geom.Geometry =
                                     feature.getAttribute("the_geom").
                                                asInstanceOf[jts.geom.Geometry]
 
-                    this_feature_is_selected = constr.geom.intersects(feat_geom)
-                    if (!this_feature_is_selected) {
-                       /*
-                        * Try if the constraint is a polygon and if this feature's
-                        * geometry is contained in it.
-                        * The most general -and optimum- way to handle this is
-                        * to use:
-                        *      IntersectionMatrix
-                        *             filtering_geom.relate(feat_geom)
-                        * and see what are the relations between both geometries
-                        * http://www.vividsolutions.com/jts/javadoc/com/vividsolutions/jts/geom/Geometry.html#relate(com.vividsolutions.jts.geom.Geometry)
-                       */
-                       if (constr.geom.isInstanceOf[jts.geom.Polygon]) {
+                var this_feature_is_selected: Boolean = false
+      
+                // See if this feature is contained in at least one of the
+                // filtering_geoms. It is just a boolean OR, so the first
+                // matching geometrical constraint on the feature breaks the
+                // for-loop
+                breakable {
+                    for (constr <- filtering_geoms) { 
+                        // this feature's geometry intersects this filter?
+
+                        this_feature_is_selected =
+                                          constr.geom.intersects(feat_geom)
+
+                        if (!this_feature_is_selected &&
+                            constr.polyg != null) {
+
+                            /*
+                             * Try if this feature's geometry is contained in
+                             * the constraint's polygon.
+                             * The most general -and optimum- way to handle
+                             * this is to use:
+                             *      IntersectionMatrix
+                             *             filtering_geom.relate(feat_geom)
+                             * and see what are the relations between both
+                             * geometries:
+                             * http://www.vividsolutions.com/jts/javadoc/com/vividsolutions/jts/geom/Geometry.html#relate(com.vividsolutions.jts.geom.Geometry)
+                             */
+                       
                             this_feature_is_selected =
-                                          constr.geom.contains(feat_geom)
-                       }
-                    }
+                                          constr.polyg.contains(feat_geom)
+                        }
 
-                    // If this geometrical constraint matched this feature, we
-                    // don't need to check the rest of geometrical constraints
-                    // on this feature.
+                        // If this geometrical constraint matched this
+                        // feature, we don't need to check the rest of
+                        // geometrical constraints on this feature.
 
-                    if (this_feature_is_selected) break
-                }
+                        if (this_feature_is_selected) break
+
+                    } // for (constr <- filtering_geoms)
+                } // breakable
       
                 if (this_feature_is_selected) {
                     // Add this feature to a resulting feature collection

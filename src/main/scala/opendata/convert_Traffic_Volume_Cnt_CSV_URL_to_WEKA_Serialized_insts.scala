@@ -17,14 +17,14 @@ class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
    ) {
 
 
-   override val expected_header_fields = Config.OpenData_CSV_Parser.
-                                          NYC_TrafficVolumeCnts_Fields_Header
+   override val expected_header_fields = Config.parserOpenDataCsv.
+                                          csvHeadersNycTraffVolumeCountsUrl
 
-   override val CSV_to_WEKA_options = Config.OpenData_CSV_Parser.
-                                    NYC_TrafficVolumeCnt_CSV_to_WEKA_SerInst
+   override val CSV_to_WEKA_options = Config.parserOpenDataCsv.
+                                    optionsWekaCsv2SerInstTraffVolumeCnt
 
-   override val intermediate_clean_CSV_fname = Config.OpenData_CSV_Parser.
-                                     Intermediate_TrafficVolumeCnt_clean_CSV
+   override val intermediate_clean_CSV_fname = Config.parserOpenDataCsv.
+                                     intermCleanCsvFNameTraffVolume
 
    /*
     * constructor this(at_current_download_time: Date)
@@ -39,8 +39,8 @@ class convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
 
    def this(at_current_download_time: Date) =
                    this(
-                           Config.NYC_Traffic_Volume_Count_URL,
-                           Config.Final_TrafficVolumeCnt_WEKA_SerInsts_fname,
+                           Config.nycTrafficVolumeCount,
+                           Config.finalWekaSerInstsFNameTraffVolume,
                            at_current_download_time
                       )
 

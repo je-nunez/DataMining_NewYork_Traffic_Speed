@@ -1,4 +1,3 @@
-
 package src.main.scala.opendata
 
 import _root_.java.util.Date
@@ -20,14 +19,14 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
    ) {
 
 
-   override val expected_header_fields = Config.OpenData_CSV_Parser.
-                                              NYC_LinkSpeed_Fields_Header
+   override val expected_header_fields = Config.parserOpenDataCsv.
+                                              csvHeadersNycLinkSpeedUrl
 
-   override val CSV_to_WEKA_options = Config.OpenData_CSV_Parser.
-                                            NYC_LinkSpeed_CSV_to_WEKA_SerInst
+   override val CSV_to_WEKA_options = Config.parserOpenDataCsv.
+                                            optionsWekaCsv2SerInstLinkSpeed
 
-   override val intermediate_clean_CSV_fname = Config.OpenData_CSV_Parser.
-                                            Intermediate_LinkSpeed_clean_CSV
+   override val intermediate_clean_CSV_fname = Config.parserOpenDataCsv.
+                                            intermCleanCsvFNameTrafficSpeeds
 
    override def transform_CSV_header_line(cvs_hdr_line: String):
                                                    Array[java.lang.String]
@@ -47,8 +46,8 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
 
    def this(at_Speed_current_download_time: Date) =
                         this(
-                               Config.NYC_Traffic_Speed_URL,
-                               Config.Final_LinkSpeed_WEKA_SerInsts_fname,
+                               Config.nycTrafficSpeedUrl,
+                               Config.finalWekaSerInstsFNameTrafficSpeeds,
                                at_Speed_current_download_time
                            )
 
@@ -83,8 +82,8 @@ class convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
          // We expect that the parsing above returned 13 fields in this line
 
          if(line_values.length != 13) {
-             log_msg(WARNING, "Ignoring: doesn't have right number of fields: "
-                              + data_line)
+             log_msg(WARNING, "Ignoring: doesn't have right number of " +
+                              "fields: " + data_line)
              return null
          }
 

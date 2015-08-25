@@ -1,10 +1,9 @@
 package src.main.scala.model
 
-
-import scala.collection.mutable.ListBuffer
-
 import _root_.java.io.File
 import _root_.java.net.URLEncoder
+
+import scala.collection.mutable.ListBuffer
 
 import weka.core.converters.SerializedInstancesLoader
 
@@ -12,7 +11,7 @@ import org.geoscript.geometry._
 
 import src.main.scala.logging.Logging._
 import src.main.scala.config.Config
-import src.main.scala.utils.download.Download_URL_to_File
+import src.main.scala.utils.download.DownloadUrlToFile
 import src.main.scala.types.Speed_in_PolygonalSection
 import src.main.scala.utils.conversion.String_to_Geom
 
@@ -64,7 +63,7 @@ class Current_Real_Time_Traffic_Speeds(
           log_msg(DEBUG, "Google Maps URL is " + gmap_url)
 
           val gmap_png = new File(dest_png)
-          Download_URL_to_File(gmap_url, gmap_png)
+          DownloadUrlToFile(gmap_url, gmap_png)
     } // print_polygonal_zone_in_NYC()
 
 
@@ -121,15 +120,15 @@ class Current_Real_Time_Traffic_Speeds(
                // Find which color according to the traffic speed to print
                // this zone in New York City: green is the best, red is slowest
                var color : Long = 0x00FF00
-               if (polygon_zone.speed >= Config.target_optimum_NYC_speed)
+               if (polygon_zone.speed >= Config.nycTargetOptimumTraffSpeed)
                      color = 0x00FF00
                else {
                      val delta_speed = (polygon_zone.speed - min_speed) /
-                                (Config.target_optimum_NYC_speed - min_speed)
+                              (Config.nycTargetOptimumTraffSpeed - min_speed)
 
                      val delta_color: Int = 0x00FF00 - 0x0000FF
                      color = 0x0000FF +
-                                   scala.math.round(delta_color * delta_speed)
+                              scala.math.round(delta_color * delta_speed)
                }
 
                val color_str = f"$color%06X"
@@ -145,7 +144,7 @@ class Current_Real_Time_Traffic_Speeds(
                          gmap_paths.toString
 
           val gmap_png = new File(dest_png)
-          Download_URL_to_File(gmap_url, gmap_png)
+          DownloadUrlToFile(gmap_url, gmap_png)
     } // print_speed_vibrancy_map()
 
 

@@ -37,12 +37,12 @@ object mainNewYorkCityLinkSpeedDataMining {
     // this time is used to correlate it with the samples of traffic volume
     // counts
     //
-    //      NYC_Traffic_Volume_Count_URL (see definition above)
+    //      nycTrafficVolumeCount (see definition above)
     //
     // because the latter has samples per hour of the day and per day (of
     // the week), ie., a sample for hour 12PM-1PM on Mondays, let's say,
     // according to the City of New York's Open Data.
-    // (see definition of NYC_Traffic_Volume_Count_URL above)
+    // (see definition of nycTrafficVolumeCount above)
 
     val download_time = Calendar.getInstance().getTime()
 
@@ -56,7 +56,7 @@ object mainNewYorkCityLinkSpeedDataMining {
     realt_speed_downldr.ETL_OpenData_CSV_URL_into_WEKA()
 
     val speed_model = new Current_Real_Time_Traffic_Speeds(
-                           Config.Final_LinkSpeed_WEKA_SerInsts_fname
+                           Config.finalWekaSerInstsFNameTrafficSpeeds
                          )
 
     val polygon_realt_speeds =
@@ -77,7 +77,7 @@ object mainNewYorkCityLinkSpeedDataMining {
     //
     // https://github.com/je-nunez/Querying_NYC_Single_Line_Street_Base
 
-    val nyc_lion = new ExistingShapefile(Config.NYC_LION_Polyline_Street_Map)
+    val nyc_lion = new ExistingShapefile(Config.nycLionMultiLineStreetMapFName)
     nyc_lion.open()
     val lion_in_realt_speeds = new DefaultFeatureCollection()
     nyc_lion.filter_geom_features(polygon_realt_speeds, lion_in_realt_speeds)

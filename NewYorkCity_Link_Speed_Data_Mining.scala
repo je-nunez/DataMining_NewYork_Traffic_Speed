@@ -17,10 +17,10 @@ import org.geotools.feature.DefaultFeatureCollection
 import src.main.scala.logging.Logging._
 import src.main.scala.config.Config
 import src.main.scala.graphics.shapefile._
-import src.main.scala.types.Speed_in_PolygonalSection
-import src.main.scala.utils.conversion.String_to_Geom
+import src.main.scala.types.SpeedInPolygonalSection
+import src.main.scala.utils.conversion.StringToGeom
 import src.main.scala.opendata._
-import src.main.scala.model.Current_Real_Time_Traffic_Speeds
+import src.main.scala.model.CurrentRealTimeTrafficSpeeds
 
 
 /*
@@ -49,28 +49,28 @@ object mainNewYorkCityLinkSpeedDataMining {
     // Convert the New York City Real-Time Speed URL to WEKA
 
     val realt_speed_downldr =
-      new convert_LinkSpeed_CSV_URL_to_WEKA_Serialized_insts(
+      new ConvertTrafficSpeedCsvUrlToWekaSerializedInsts(
                                download_time
         )
 
-    realt_speed_downldr.ETL_OpenData_CSV_URL_into_WEKA()
+    realt_speed_downldr.etlOpenDataCsvUrlIntoWeka()
 
-    val speed_model = new Current_Real_Time_Traffic_Speeds(
+    val speed_model = new CurrentRealTimeTrafficSpeeds(
                            Config.finalWekaSerInstsFNameTrafficSpeeds
                          )
 
     val polygon_realt_speeds =
-      speed_model.load_traffic_speed_per_polygon_in_the_city()
+      speed_model.loadTrafficSpeedPerPolygonInTheCity()
 
     // Process the Traffic Volume Counts per segment and per hour to
     // unite it with the Real-Time Traffic Speed.
 
     val traffic_downldr =
-      new convert_Traffic_Volume_Cnt_CSV_URL_to_WEKA_Serialized_insts(
+      new ConvertTrafficVolumeCntCsvUrlToWekaSerializedInsts(
                          download_time
                      )
 
-    traffic_downldr.ETL_OpenData_CSV_URL_into_WEKA()
+    traffic_downldr.etlOpenDataCsvUrlIntoWeka()
 
     // Open the ESRI Shapefile with the New York City LION Single-Line Street
     // GeoDB. This ESRI Shapefile was a download from an ETL in project:

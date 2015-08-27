@@ -80,7 +80,7 @@ object mainNewYorkCityLinkSpeedDataMining {
     val nyc_lion = new ExistingShapefile(Config.nycLionMultiLineStreetMapFName)
     nyc_lion.open()
     val lion_in_realt_speeds = new DefaultFeatureCollection()
-    nyc_lion.filter_geom_features(polygon_realt_speeds, lion_in_realt_speeds)
+    nyc_lion.filterGeomFeatures(polygon_realt_speeds, lion_in_realt_speeds)
 
     println("Number of filtered segments: " + lion_in_realt_speeds.size)
   }  // end of method main(...)

@@ -120,7 +120,7 @@ abstract class ConvertOpenDataCsvUrlToWekaSerializedInsts(
   } // write_clean_CSV_data_line
 
 
-  protected def download_and_clean_into_intermediate_CSV() {
+  protected def downloadAndCleanIntoIntermediateCsvFile() {
 
     val current_epoch = currentDownloadTime.getTime()
 
@@ -146,7 +146,7 @@ abstract class ConvertOpenDataCsvUrlToWekaSerializedInsts(
                      log_msg(ERROR, "I/O error occurred" + e.getMessage)
             }
     }
-  } // method download_and_clean_into_intermediate_CSV
+  } // method downloadAndCleanIntoIntermediateCsvFile
 
 
   /*
@@ -181,7 +181,7 @@ abstract class ConvertOpenDataCsvUrlToWekaSerializedInsts(
     /* download the OpenData CSV URL and clean it into CSV filename 
      * "intermediateCleanCsvFName"
      */
-    download_and_clean_into_intermediate_CSV()
+    downloadAndCleanIntoIntermediateCsvFile()
 
     /* Second pass of the parser: convert CSV to BSI
      * -SerializedInstances-, finding nominal attributes, etc. */

@@ -62,7 +62,7 @@ class ExistingShapefile(
 
 
   /*
-   * method: filter_geom_features
+   * method: filterGeomFeatures
    *
    * Uses GeoTools to create a new collection of features given the current
    * collection of features in the field "layer" and a filtering set of
@@ -77,7 +77,7 @@ class ExistingShapefile(
    *                           filtered results
    */
   
-  def filter_geom_features(filtering_geoms: List[SpeedInPolygonalSection],
+  def filterGeomFeatures(filtering_geoms: List[SpeedInPolygonalSection],
                            resulting_features: DefaultFeatureCollection) {
 
     /* TODO: this has to be rewritten to use instead the
@@ -139,6 +139,6 @@ class ExistingShapefile(
       }
     } // end of "for (f <- layer.features.toArray()) {"
 
-  } // end of method filter_geom_features
+  } // end of method filterGeomFeatures
 
 }

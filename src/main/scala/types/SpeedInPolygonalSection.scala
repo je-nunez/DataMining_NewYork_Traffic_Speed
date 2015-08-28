@@ -17,10 +17,10 @@ import org.geoscript.geometry._
  */
 
 case class SpeedInPolygonalSection(speed: Double,
-                                     geometry: jts.geom.Geometry,
-                                     polygon_encoded: String,
-                                     centroid: Point,
-                                     well_known_addr: String) {
+                                   geometry: jts.geom.Geometry,
+                                   polygon_encoded: String,
+                                   centroid: Point,
+                                   well_known_addr: String) {
 
   // Handy alias to access the "geometry: jts.geom.Geometry" field, by alias
   // "geom":

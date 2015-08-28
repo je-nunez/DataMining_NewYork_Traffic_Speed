@@ -66,7 +66,7 @@ class ConvertTrafficVolumeCntCsvUrlToWekaSerializedInsts(
 
     // We expect that the parsing above returned 31 fields in this line
 
-    if(line_values.length != 31) {
+    if (line_values.length != 31) {
         log_msg(WARNING, "Ignoring: doesn't have right number of fields: "
                          + data_line)
         return null
@@ -92,8 +92,8 @@ class ConvertTrafficVolumeCntCsvUrlToWekaSerializedInsts(
 
     // Check that the fields 1,2, and 8 to 31 are non-negative integers
 
-    for( field_index <- 0 to 30
-             if ( field_index <=1 || field_index >= 7 ) ) {
+    for (field_index <- 0 to 30
+             if (field_index <=1 || field_index >= 7)) {
 
       val field_value = line_values(field_index)
       var int_field_value: Int = -1

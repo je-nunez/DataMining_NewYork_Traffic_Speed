@@ -108,11 +108,11 @@ class ConvertTrafficSpeedCsvUrlToWekaSerializedInsts(
 
     val diff_in_epochs: Long = (current_epoch - epoch_of_measure_in_line)
 
-    if(diff_in_epochs > max_age_tolerance_in_time) {
+    if (diff_in_epochs > max_age_tolerance_in_time) {
         log_msg(WARNING, "Ignoring: date-time in 5th field is too old: "
                          + data_line)
         return null
-    } else if(diff_in_epochs < 0) {
+    } else if (diff_in_epochs < 0) {
         // The sample in this line has a time ahead of us: it can be trickier
         // for us to correlate it with other data, and this is why can set
         // the log_msg() to ERROR instead of WARNING, so it is distinctive

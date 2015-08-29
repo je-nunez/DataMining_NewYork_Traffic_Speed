@@ -15,20 +15,38 @@
 #
 #    http://www.nyc.gov/html/dcp/pdf/bytes/lion_metadata.pdf?v=15b
 #
-# One of the task of this ETL on this NYC geodb is to select
+# One of the tasks of this ETL on this NYC geodb is to select
 # properly this SQL select statement. E.g., as it is now, this
-# SQL below for this ETL generates over 100 MB of results.
+# SQL below for this ETL generates over 144 MB of results.
 #
 # Note that the geographical coordinates (XFrom, YFrom, XTo, YTo,
 # ArcCenterX, ArcCenterY) are included in this SQL query, as well
 # as other non-geographical attributes, as the 'street' name.
 
-ETL_SQL_select_transform="select segmentid, segmenttyp, segcount, XFrom, YFrom, XTo, YTo, ArcCenterX, ArcCenterY, street from lion"
+ETL_SQL_select_transform="SELECT segmentid, segmenttyp, segcount, RW_Type,
+                                 Snow_Priority as Snow_Prior,
+                                 NodeIDFrom, NodeIDTO,
+                                 Shape_Length as Shape_Leng,
+                                 XFrom, YFrom, XTo, YTo,
+                                 ArcCenterX, ArcCenterY, CurveFlag,
+                                 TrafDir, street
+                           FROM lion
+                           WHERE
+                                 TrafDir != 'P' and
+                                 TrafDir != ' ' and
+                                 RW_Type != '12'"
 #
-# This SQL ETL below, which includes the field 'streetwidth', happens to
+# This SQL ETL below, which includes the field 'StreetWidth', happens to
 # fail because the resulting dBase IV file in the ouput 'Shapefile' has
 # an invalid value in one of the more than a quater records, so we can't
-# use it. (Of couse, the 'streetwidth' field would be very useful for the
+# use it. As the description of this field 'StreetWidth' says:
+#
+# Field: StreetWidth  :
+#         Not currently implemented. The width, in feet, of the
+#         paved area of the street.
+#
+# (pag 36, http://www.nyc.gov/html/dcp/pdf/bytes/lion_metadata.pdf?v=15b )
+# (Of couse, the 'streetwidth' field would be very useful for the
 # Data Mining because the both the Speed and the Volume Counts of Traffic
 # depend on the 'streetwidth'.)
 #

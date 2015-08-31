@@ -295,15 +295,27 @@ class CurrentRealTimeTrafficSpeeds(val weka_bsi_fname: String) {
     */
 
   protected def minDistanceBetweenTwoGeometries(g0: jts.geom.Geometry,
-                                               g1: jts.geom.Geometry):
+                                                g1: jts.geom.Geometry):
     Double = {
 
-      // get the closest coordinates between the two geometries
-      val closestCoords = DistanceOp.closestPoints(g0, g1)
+      // get the nearest coordinates between the two geometries
+      //
+      // The Java Topological Suite has deprecated:
+      //
+      //     DistanceOp.closestPoints(g0, g1)
+      //
+      // to:
+      //
+      //     DistanceOp.nearestPoints(g0, g1)
+      //
+      // ( http://www.vividsolutions.com/jts/javadoc/deprecated-list.html
+      //   http://tsusiatsoftware.net/jts/javadoc/deprecated-list.html )
 
-      // calculate the distance in meters between those closest coords
-      val distance_meters = JTS.orthodromicDistance(closestCoords(0),
-                                                    closestCoords(1),
+      val nearestCoords = DistanceOp.nearestPoints(g0, g1)
+
+      // calculate the distance in meters between those nearest coords
+      val distance_meters = JTS.orthodromicDistance(nearestCoords(0),
+                                                    nearestCoords(1),
                                                     coordRefSysWGS84)
 
       distance_meters
@@ -321,7 +333,7 @@ class CurrentRealTimeTrafficSpeeds(val weka_bsi_fname: String) {
     */
 
   protected def centroidDistanceBetweenTwoGeometries(centroid0: Point,
-                                                    centroid1: Point):
+                                                     centroid1: Point):
     Double = {
 
       val coord_0 = centroid0.getCoordinate
@@ -342,38 +354,47 @@ class CurrentRealTimeTrafficSpeeds(val weka_bsi_fname: String) {
     *
     * Ie., supposing that we "annotate" by a sign certain hypothetical
     * vehicle in traffic at the source polygon, at what time does it
-    * will arrive at the destination polygon.
+    * will arrive at the destination polygon?
     *
     * This method needs to be improved, since it is meaningful for the
-    * traffic.
+    * traffic, ie., if there are no intermediate polygons between the
+    * two given, etc.
     *
     * @param src the source polygonal section in the City where the
     *            "annotated" vehicle departs towards the destination
     *            polygonal section in the City
     * @param dest the destination polygonal section in the City where the
     *             "annotated" vehicle wants to arrive
-    * @return the time in seconds the "annotated" vehicle takes
+    * @return the pair (t1, t2) with the time in seconds the "annotated"
+    *         vehicle takes to go from the source polygon to the destination
+    *         polygon in the City, the pair being (t1, t2) = (minimum-time,
+    *         time-between-centroids), ie., the time to go by the nearest
+    *         points between the src to the dest polygons, and the second
+    *         value in the returned pair, the time to go between the
+    *         centroids of those two polygons.
     */
 
   def findTimeToGoFromOnePolygonToAnother(
                                        src: SpeedInPolygonalSection,
                                        dest: SpeedInPolygonalSection
                                     ):
-    Double = {
-
-      // IN-PROGRESS: it is using so far
-      //          centroidDistanceBetweenTwoGeometries(...)
-      // but it can use as well
-      //          minDistanceBetweenTwoGeometries(...)
-      // with different results, of course
+    (Double, Double) = {
 
       val distance_centroids =
         centroidDistanceBetweenTwoGeometries(src.centroid, dest.centroid)
 
-      // assume the speed is in KM/H (the "distance_centroids" is in meters)
-      val time_centroids_secs = distance_centroids / ( src.speed / 3.6 )
+      val closest_distance =
+        minDistanceBetweenTwoGeometries(src.geometry, dest.geometry)
 
-      time_centroids_secs
+      // assume the speed is in KM/H (the "distance_centroids" is in meters)
+      val speed_meters_per_sec = src.speed / 3.6
+
+      val time_centroids_secs = distance_centroids / speed_meters_per_sec
+
+      val minimun_time_secs = closest_distance / speed_meters_per_sec
+
+      (minimun_time_secs, time_centroids_secs)
+
   } // method findTimeToGoFromOnePolygonToAnother(...)
 
 }

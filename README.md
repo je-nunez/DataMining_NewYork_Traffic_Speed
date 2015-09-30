@@ -198,3 +198,42 @@ two-pass parser is better, and is the one that is implemented now. (The parser
 can also be incremental, since WEKA's `ARFFSaver` implements the
 `IncrementalConverter` interface -see its `writeIncremental(...)` public method.)
 
+# Current status of this project
+
+There is an issue as of September 2015 for Data Mining with the current Real-Time
+Open Data source the City of New York provides:
+
+     http://real2.nyctmc.org/nyc-links-cams/LinkSpeedQuery.txt
+
+While it has the Real-Time speeds updated in less than 2 minutes, it lacks the
+direction of traffic. (The current fields of this CSV file are -with an example of
+their values for one actual record to the left:
+
+     "Id":  "119"
+     "Speed":  "32.93"
+     "TravelTime":   "194"
+     "Status":   "0"
+     "DataAsOf":   "9/29/2015 22:31:24"
+     "linkId":   "4456502"
+     "linkPoints":   "40.70631,-74.01501 40.705380,-74.01528 40.70496,-74.01546 40.70374,-74.01574001 40.70304,-74.01582 40.70126,-74.01574 40.70026,-74.01541 40.69408,-74.01304 40.68556,-74.00779 40.68363,-74.00668 40.68213,-74.00602 40.681160,-74.005320 40.6798,-74.00416"
+     "EncodedPolyLine":   "mmmwFx`wbMxDt@rAb@rFv@jCNbJOfEaAre@yMft@y_@`K}EjHcC`EkCnGgF"
+     "EncodedPolyLineLvls":  "BBBBBBBBBBBBB"
+     "Owner":   "MTA Bridges & Tunnels"
+     "Transcom_id":   "4456502"
+     "Borough":    "Manhattan"
+     "linkName":   "BBT E Manhattan Portal - Toll Plaza"
+
+so, while the `Speed` field is given, as well as the continuous travel time through the
+link-camera, the Open Data CSV as of September 2015 lacks the direction of this speed
+of traffic. (Ie., traffic at the same point but in opposite direction can have different
+speeds.)
+
+Other projects have been started with a similar objective but using the General Transit
+Feed Specification files, taking the frequency of urban public buses given by the GTFS
+as probes inside the transit of the speed in that intersection. (GTFS also has the
+`shapes.txt` and `stops.txt` files which have coordinates, ie., geometries which consist
+in single lines or points, respectively in each file. The Link Speed Query does show
+other information that GTFS probably can't give, ie., refreshed in less than 2 minutes,
+and it can cover geographical areas where buses may not pass very frequently, like
+certain bridges, etc.)
+

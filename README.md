@@ -232,8 +232,12 @@ Other projects have been started with a similar objective but using the General 
 Feed Specification files, taking the frequency of urban public buses given by the GTFS
 as probes inside the transit of the speed in that intersection. (GTFS also has the
 `shapes.txt` and `stops.txt` files which have coordinates, ie., geometries which consist
-in single lines or points, respectively in each file. The Link Speed Query does show
-other information that GTFS probably can't give, ie., refreshed in less than 2 minutes,
-and it can cover geographical areas where buses may not pass very frequently, like
-certain bridges, etc.)
-
+in single lines or points, respectively in each file. The Link Speed Query using 
+Sensors does show other information that GTFS probably can't give, ie., refreshed in less
+than 2 minutes, and it can cover geographical areas where buses may not pass very frequently,
+like certain bridges, etc. Besides, in comparison to Link Speed Queries (Sensors), GTFS can
+also have its limitations, since there can be segments of the streets where the public
+transit uses reserved lanes, so the public transit vehicle doesn't need to maintain in them
+the normal traffic speed for not becoming a bottleneck. In summary, measuring the normal
+traffic speed using GTFS as probes inside the traffic, and Link Speed Sensors improve
+the other' capacities for this problem of traffic space availability and planning.)

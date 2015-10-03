@@ -10,12 +10,12 @@ subject to change. The documentation can be inaccurate.
 
 # Description
 
-As **Jane Jacobs** wrote in her book **Death and Life of Great
-American Cities**, in chapter 7, *The Generators of Diversity*:
-*To understand cities, we have to deal outright with combinations or
-mixtures of uses, not separate uses, as the essential phenomena...
-A mixture of uses, if it is to be sufficiently complex to sustain
-city safety, public contact and cross-use, needs an enormous
+As **Jane Jacobs** wrote in her book **The Death and Life of Great
+American Cities** on Urban Planning, in chapter 7, *The Generators of
+Diversity*: *To understand cities, we have to deal outright with
+combinations or mixtures of uses, not separate uses, as the essential
+phenomena... A mixture of uses, if it is to be sufficiently complex
+to sustain city safety, public contact and cross-use, needs an enormous
 diversity of ingredients. So the first question -and by far the most
 important question- about planning cities is this: How can cities
 generate enough mixture among uses -enough diversity- throughout
